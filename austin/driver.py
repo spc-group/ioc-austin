@@ -6,10 +6,9 @@ log = logging.getLogger(__name__)
 
 class RobotDriver():
 
-    def load_sample(self, value):
-        log.info(f"Moving robot to {value}.")
-        print(f"Moving robot to {value}...", flush=True)
+    def transfer(self, pos1, pos2):
+        print(f"Moving robot from {pos1} to {pos2}.")
         # Move the robot here. ``time.sleep`` is a placeholder for the
         # robot doing slow things.
-        time.sleep(20)
+        time.sleep(5)
         print("done", flush=True)
