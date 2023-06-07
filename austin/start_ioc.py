@@ -87,6 +87,29 @@ class TransferGroup(PVGroup):
         value=0,
     )
 
+    @run.putter
+    async def run(self, instance, value):
+        """Handler for the transfer action on the robot."""
+        if not value:
+            # Some null value was given, so ignore it
+            return
+        # Update state PVs
+        await self.done_moving.write(0)
+        # Prepare arguments to the action
+        pos1 = (self.x1.value, self.y1.value, self.z1.value)
+        pos2 = (self.x2.value, self.y2.value, self.z2.value)
+        action = partial(self.parent.driver.transfer, pos1=pos1, pos2=pos2)
+        # Execute the action
+        await self.parent.lock()
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, action)
+        finally:
+            # Update state PVs
+            await self.done_moving.write(1)
+            # Release the lock on the robot
+            await self.parent.unlock()    
+
 
 class RobotIOC(PVGroup):
     _lock = Lock()
