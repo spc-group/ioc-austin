@@ -25,6 +25,25 @@ class RobotBusy(RuntimeError):
 
 class StatusGroup(PVGroup):
     busy = pvproperty(name=":busy", value=False, doc="If the robot is busy.", read_only=True)
+    mood = pvproperty(name=":mood", value="Bored", doc="How does the robot feel right now?", read_only=True)
+
+    @mood.scan(period=0.1)
+    async def mood(self, instance, async_lib):
+        """
+        Scan hook for getting the robot's mood.
+
+        Parameters
+        ----------
+        instance : ChannelData
+            This is the instance of ``my_property``.
+
+        async_lib : AsyncLibraryLayer
+            This is a shim layer for {asyncio, curio, trio} that you can use
+            to make async library-agnostic IOCs.
+        """
+        new_mood = self.parent.driver.mood()
+        if new_mood != instance.value:
+            await instance.write(new_mood)
 
 
 class TransferGroup(PVGroup):
@@ -67,29 +86,6 @@ class TransferGroup(PVGroup):
         doc="Direct the robot to start the action",
         value=0,
     )
-
-    @run.putter
-    async def run(self, instance, value):
-        """Handler for the transfer action on the robot."""
-        if not value:
-            # Some null value was given, so ignore it
-            return
-        # Update state PVs
-        await self.done_moving.write(0)
-        # Prepare arguments to the action
-        pos1 = (self.x1.value, self.y1.value, self.z1.value)
-        pos2 = (self.x2.value, self.y2.value, self.z2.value)
-        action = partial(self.parent.driver.transfer, pos1=pos1, pos2=pos2)
-        # Execute the action
-        await self.parent.lock()
-        try:
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(None, action)
-        finally:
-            # Update state PVs
-            await self.done_moving.write(1)
-            # Release the lock on the robot
-            await self.parent.unlock()
 
 
 class RobotIOC(PVGroup):

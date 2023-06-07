@@ -1,10 +1,18 @@
 import logging
 import time
 
+
 # Set up logging
 log = logging.getLogger(__name__)
 
 class RobotDriver():
+
+    def mood(self):
+        """Joke routine. How is the robot feeling right now?"""
+        moods = ["bored", "happy", "sad", "sleepy", "hungry"]
+        now = time.time()
+        mood_idx = int((now / 10) % len(moods))
+        return moods[mood_idx]
 
     def transfer(self, pos1, pos2):
         print(f"Moving robot from {pos1} to {pos2}.")
