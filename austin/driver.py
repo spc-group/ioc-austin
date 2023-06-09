@@ -14,6 +14,7 @@ class RobotDisconnected(ConnectionError):
 class RobotDriver():
     robot_ip: str = ""
     port: str = ""
+    is_connected: bool = False
 
     def __init__(self, robot_ip, port, timeout):
         self.robot_ip = robot_ip
@@ -24,17 +25,24 @@ class RobotDriver():
         self.connect()
 
     def connect(self):
-        self.sock.connect((self.robot_ip, self.port))
-        # Receive initial "Connected" Header
-        self.sock.recv(1096)
+        try:
+            self.sock.connect((self.robot_ip, self.port))
+        except Exception as exp:
+            msg = f"Could not connect to robot: {self.robot_ip}"
+            log.error(msg)
+            self.is_connected = False
+        else:
+            self.is_connected = True
+            # Receive initial "Connected" Header
+            self.sock.recv(1096)
 
     def send_and_receive(self, command):
         try:
             self.sock.sendall((command + '\n').encode())
             return self.get_reply()
-        except (ConnectionResetError, ConnectionAbortedError):
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
             msg = 'The connection was lost to the robot. Please connect and try running again.'
-            log.error(msg)
+            log.warning(msg)
             raise RobotDisconnected(msg)
 
     def get_reply(self):

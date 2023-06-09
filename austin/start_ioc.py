@@ -14,13 +14,17 @@ from .robot import RobotIOC
 log = logging.getLogger(__name__)
 
 
+ROBOT_IP = '164.54.119.60'
+ROBOT_IP = None
+
+
 def main():
     ioc_options, run_options = ioc_arg_parser(
         default_prefix='25idAustin:',
         desc='Run an IOC that operates the sample changing robot.')
 
     # Instantiate the IOC, assigning a prefix for the PV names.
-    ioc = RobotIOC(robot_ip='164.54.119.60', **ioc_options)
+    ioc = RobotIOC(robot_ip=ROBOT_IP, **ioc_options)
 
     # Run IOC.
     run(ioc.pvdb, startup_hook=ioc.__ainit__, **run_options)
