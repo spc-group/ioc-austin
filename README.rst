@@ -13,24 +13,52 @@ To use, install caproto and run the following from this directory:
 	  
    python -m austin.start_ioc --list-pvs
 
+Dashboard Commands
+------------------
 
-To interact with the IOC, send the desired position to the
-``25idAustin:sample`` process variable (PV), which will run the
-necessary robot code (not yet implemented). The PV ``25idAustin:busy``
-can be monitored to see when the move is done.
+The standard dashboard commands do things like monitor the robot mode,
+cycle power on and off, etc. These are available in the
+``25idAustin:dashboard`` prefix. E.g. to load and then play a program:
+
+.. code:: bash
+
+    caput 25idAustin:dashboard:program 1sample.urp
+    caget 25idAustin:dashboard:program_rbv
+    caput 25idAustin:dashboard:play 1
+
+Actions
+-------
+
+Robot actions are python functions that are executed by the IOC
+(e.g. using the urx library). Each robot action on the IOC has a
+prefix, for example ``25idAustin:transfer`` is the prefix for the
+*transfer* action. Send the desired positions to the
+``25idAustin:transfer.X1`` (and Y1..Z2) process variable (PV), and set
+any additional arguments on the transfer PVs. Then caput *1* to the
+``25idAustin:transfer.run`` PV, which will run the robot action's
+python function (not yet implemented). The PV
+``25idAustin:robot:busy`` can be monitored to see when the move is
+done.
 
 E.g. in one terminal:
 
 .. code:: bash
 
-    camonitor 25idAustin:busy
+    camonitor 25idAustin:robot:busy
 
 Then in a second terminal:
 
 .. code:: bash
 
-    caput 25idAustin:sample A2
-
+    caput 25idAustin:transfer.X1 15.3
+    caput 25idAustin:transfer.Y1 22.9
+    caput 25idAustin:transfer.Z1 -11.0
+    caput 25idAustin:transfer.X2 99.18
+    caput 25idAustin:transfer.Y2 -87
+    caput 25idAustin:transfer.Z2 2
+    caput 25idAustin:transfer.VELO 0.1
+    caput 25idAustin:transfer.RUN 1
+    
 caproto vs EPICS
 ================
 

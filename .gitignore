@@ -1,6 +1,10 @@
 # Emacs temporary files
 *~
 
+# Rendered org-mode files
+pv-mappings.html
+pv-mappings.org_archive
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
