@@ -7,7 +7,17 @@ from functools import partial
 from threading import Lock
 
 from caproto import ChannelType
-from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run, PvpropertyDouble, PvpropertyShort, PvpropertyShortRO, PvpropertyChar, SubGroup
+from caproto.server import (
+    PVGroup,
+    ioc_arg_parser,
+    pvproperty,
+    run,
+    PvpropertyDouble,
+    PvpropertyShort,
+    PvpropertyShortRO,
+    PvpropertyChar,
+    SubGroup,
+)
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
@@ -16,8 +26,10 @@ from .actions import TransferGroup
 
 log = logging.getLogger(__name__)
 
+
 class RobotBusy(RuntimeError):
     """The robot cannot be controlled because it is currently busy."""
+
     ...
 
 
@@ -35,7 +47,6 @@ class RobotIOC(PVGroup):
     async def __ainit__(self, async_lib):
         self.async_lib = async_lib
         # Note that we have to pass this in to ``run()``!
-        
 
     async def lock(self):
         """Prevent other actions for happening on the robot.

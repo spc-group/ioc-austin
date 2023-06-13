@@ -7,7 +7,17 @@ from functools import partial
 from threading import Lock
 
 from caproto import ChannelType
-from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run, PvpropertyDouble, PvpropertyShort, PvpropertyShortRO, PvpropertyChar, SubGroup
+from caproto.server import (
+    PVGroup,
+    ioc_arg_parser,
+    pvproperty,
+    run,
+    PvpropertyDouble,
+    PvpropertyShort,
+    PvpropertyShortRO,
+    PvpropertyChar,
+    SubGroup,
+)
 
 from .driver import RobotDriver
 
@@ -16,21 +26,31 @@ log = logging.getLogger(__name__)
 
 class TransferGroup(PVGroup):
     # Parameters to the action
-    x1 = pvproperty(name=".X1", value=0., dtype=PvpropertyDouble, doc="Source position x")
-    y1 = pvproperty(name=".Y1", value=0., dtype=PvpropertyDouble, doc="Source position y")
-    z1 = pvproperty(name=".Z1", value=0., dtype=PvpropertyDouble, doc="Source position z")
-    x2 = pvproperty(name=".X2", value=0., dtype=PvpropertyDouble, doc="Target position x")
-    y2 = pvproperty(name=".Y2", value=0., dtype=PvpropertyDouble, doc="Target position y")
-    z2 = pvproperty(name=".Z2", value=0., dtype=PvpropertyDouble, doc="Target position z")
-    velocity = pvproperty(
-        name=".VELO", dtype=PvpropertyDouble, doc="Velocity (EGU/s)"
+    x1 = pvproperty(
+        name=".X1", value=0.0, dtype=PvpropertyDouble, doc="Source position x"
     )
+    y1 = pvproperty(
+        name=".Y1", value=0.0, dtype=PvpropertyDouble, doc="Source position y"
+    )
+    z1 = pvproperty(
+        name=".Z1", value=0.0, dtype=PvpropertyDouble, doc="Source position z"
+    )
+    x2 = pvproperty(
+        name=".X2", value=0.0, dtype=PvpropertyDouble, doc="Target position x"
+    )
+    y2 = pvproperty(
+        name=".Y2", value=0.0, dtype=PvpropertyDouble, doc="Target position y"
+    )
+    z2 = pvproperty(
+        name=".Z2", value=0.0, dtype=PvpropertyDouble, doc="Target position z"
+    )
+    velocity = pvproperty(name=".VELO", dtype=PvpropertyDouble, doc="Velocity (EGU/s)")
     seconds_to_velocity = pvproperty(
         name=".ACCL",
         dtype=PvpropertyDouble,
         doc="Seconds to Velocity",
         value=0.2,
-    ) 
+    )
     engineering_units = pvproperty(
         name=".EGU",
         dtype=PvpropertyChar,
@@ -76,4 +96,4 @@ class TransferGroup(PVGroup):
             # Update state PVs
             await self.done_moving.write(1)
             # Release the lock on the robot
-            await self.parent.unlock()    
+            await self.parent.unlock()

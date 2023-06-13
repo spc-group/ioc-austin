@@ -11,38 +11,43 @@
 - *Scan cmd* is the command that is sent over the wire periodically
   (e.g. 0.5 sec) to check for new values.
 
+  | ✓ | T | PUT PV                  | PUT cmd                      | GET PV                | Scan cmd             | dtype                   |
+  |---+---+-------------------------+------------------------------+-----------------------+----------------------+-------------------------|
+  | ✓ |   | :play                   | play                         |                       |                      | bool                    |
+  | ✓ |   | :stop                   | stop                         |                       |                      | bool                    |
+  | ✓ |   | :pause                  | pause                        |                       |                      | bool                    |
+  | ✓ |   | :quit                   | quit                         |                       |                      | bool                    |
+  | ✓ |   | :shutdown               | shutdown                     |                       |                      | bool                    |
+  | ✓ |   | :release_brake          | brake release                |                       |                      | bool                    |
+  | ✓ |   | :close_safety_popup     | close safety popup           |                       |                      | bool                    |
+  | ✓ |   | :operational_mode       | set operational mode <value> | :operational_mode_rbv | get operational mode | enum (manual/automatic) |
+  | ✓ |   | :power                  | power on / power off         | :power_rbv            | [check robot mode?]  | bool                    |
+  | ✓ |   | :unlock_protective_stop | unlock_protective_stop       |                       |                      | bool                    |
+  | ✓ |   | :restart_safety         | restart safety               |                       |                      | bool                    |
+  | ✓ |   | :installation           | load installation <value>    |                       |                      | str                     |
+  | ✓ |   | :program                | load <value>                 | :program_rbv          | get loaded program   | str                     |
+  | ✓ |   |                         |                              | :program_state        | programState         | enum                    |
+  | ✓ |   |                         |                              | :robot_mode           | robotmode            | enum                    |
+  | ✓ |   |                         |                              | :safety_status*       | safetystatus         | enum                    |
+  | ✓ |   |                         |                              | :program_saved        | isProgramSaved       | bool                    |
+  | ✓ |   |                         |                              | :program_running      | running              | bool                    |
+  | ✓ |   |                         |                              | :remote_control       | is in remote control | bool                    |
+  | ✓ |   |                         |                              | :polyscope_version    | PolyscopeVersion     | str                     |
+  | ✓ | T |                         |                              | :serial_number        | get serial number    | str                     |
+  | ✓ | T |                         |                              | :model_number         | get robot model      | str                     |
 
-  | ✓ | PUT PV                  | PUT cmd                      | GET PV                | Scan cmd             | dtype                   |
-  |---+-------------------------+------------------------------+-----------------------+----------------------+-------------------------|
-  |   | :play                   | play                         |                       |                      | bool                    |
-  |   | :stop                   | stop                         |                       |                      | bool                    |
-  |   | :pause                  | pause                        |                       |                      | bool                    |
-  |   | :quit                   | quit                         |                       |                      | bool                    |
-  |   | :shutdown               | shutdown                     |                       |                      | bool                    |
-  |   | :release_brake          | brake release                |                       |                      | bool                    |
-  |   | :close_safety_popup     | close_safety_popup           |                       |                      | bool                    |
-  |   | :operational_mode       | set operational mode <value> | :operational_mode_rbv | get operational mode | enum (manual/automatic) |
-  |   | :power                  | power on / power off         | :power_rbv            | [check robot mode?]  | bool                    |
-  |   | :unlock_protective_stop | unlock_protective_stop       |                       |                      | bool                    |
-  |   | :restart_safety         | restart safety               |                       |                      | bool                    |
-  | ✓ | :program                | load <value>                 | :program_rbv          | get loaded program   | str                     |
-  |   |                         |                              | :program_state        | programState         | enum                    |
-  |   |                         |                              | :program_is_saved     | isProgramSaved       | bool                    |
-  |   |                         |                              | :is_running           | running              | bool                    |
-  |   |                         |                              | :robot_mode           | robotmode            | enum                    |
-  |   |                         |                              | :safety_status        | safetystatus         | enum                    |
-  |   |                         |                              | :is_remote_control    | is in remote control | bool                    |
-  |   |                         |                              | :software_version     | version              | str                     |
-  |   |                         |                              | :polyscope_version    | PolyScopeVersion     | str                     |
-  |   |                         |                              | :serial_number        | get serial number    | str                     |
-  |   |                         |                              | :model_number         | get robot model      | str                     |
+  * This :safety_status PV should use the SafetyStatus enum, but some
+    of the strings are longer than the 26 character limit, and so this
+    will need to be factored.
 ** Commands we skipped
    - close popup
    - popup
    - addToLog
    - safetymode
+   - clear operational mode
    - generate flight report
    - generate support file
+   - version (unrecognized)
 * State (25idAustin:robot)
   - TBD
 * Actions

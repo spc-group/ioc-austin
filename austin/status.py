@@ -7,14 +7,31 @@ from functools import partial
 from threading import Lock
 
 from caproto import ChannelType
-from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run, PvpropertyDouble, PvpropertyShort, PvpropertyShortRO, PvpropertyChar, SubGroup
+from caproto.server import (
+    PVGroup,
+    ioc_arg_parser,
+    pvproperty,
+    run,
+    PvpropertyDouble,
+    PvpropertyShort,
+    PvpropertyShortRO,
+    PvpropertyChar,
+    SubGroup,
+)
 
 from .driver import RobotDriver
 
 
 class StatusGroup(PVGroup):
-    busy = pvproperty(name=":busy", value=False, doc="If the robot is busy.", read_only=True)
-    mood = pvproperty(name=":mood", value="Bored", doc="How does the robot feel right now?", read_only=True)
+    busy = pvproperty(
+        name=":busy", value=False, doc="If the robot is busy.", read_only=True
+    )
+    mood = pvproperty(
+        name=":mood",
+        value="Bored",
+        doc="How does the robot feel right now?",
+        read_only=True,
+    )
 
     @mood.scan(period=0.1)
     async def mood(self, instance, async_lib):
