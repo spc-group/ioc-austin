@@ -17,19 +17,19 @@ from caproto.server import (
     PvpropertyShortRO,
     PvpropertyChar,
     SubGroup,
+    pvfunction,
 )
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
 from .status import StatusGroup
-from .actions import TransferGroup
+from .actions import TransferGroup, ActionsGroup
 
 log = logging.getLogger(__name__)
 
 
 class RobotBusy(RuntimeError):
     """The robot cannot be controlled because it is currently busy."""
-
     ...
 
 
@@ -38,6 +38,7 @@ class RobotIOC(PVGroup):
 
     robot = SubGroup(StatusGroup, prefix="robot")
     transfer = SubGroup(TransferGroup, prefix="transfer")
+    actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
 
     def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):

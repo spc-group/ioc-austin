@@ -5,6 +5,8 @@ import time
 import asyncio
 from functools import partial
 from threading import Lock
+from typing import Literal
+import enum
 
 from caproto import ChannelType
 from caproto.server import (
@@ -17,6 +19,7 @@ from caproto.server import (
     PvpropertyShortRO,
     PvpropertyChar,
     SubGroup,
+    pvfunction,
 )
 
 from .driver import RobotDriver
@@ -97,3 +100,19 @@ class TransferGroup(PVGroup):
             await self.done_moving.write(1)
             # Release the lock on the robot
             await self.parent.unlock()
+
+
+class ActionsGroup(PVGroup):
+
+    class DanceStyles(enum.IntEnum):
+        JAZZ = 0
+        BREAK = 1
+        TAP = 2
+
+
+    @pvfunction(default=[0], prefix="dance:")
+    async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:
+        print(f"Dancing with style: '{style}'")
+        await asyncio.sleep(5)
+        print("done dancing")
+        return True
