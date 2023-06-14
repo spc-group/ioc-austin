@@ -22,7 +22,7 @@
   | ✓ |   | :close_safety_popup     | close safety popup           |                       |                      | bool                    |
   | ✓ |   | :operational_mode       | set operational mode <value> | :operational_mode_rbv | get operational mode | enum (manual/automatic) |
   | ✓ |   | :power                  | power on / power off         | :power_rbv            | [check robot mode?]  | bool                    |
-  | ✓ |   | :unlock_protective_stop | unlock_protective_stop       |                       |                      | bool                    |
+  | ✓ |   | :unlock_protective_stop | unlock protective stop       |                       |                      | bool                    |
   | ✓ |   | :restart_safety         | restart safety               |                       |                      | bool                    |
   | ✓ |   | :installation           | load installation <value>    |                       |                      | str                     |
   | ✓ |   | :program                | load <value>                 | :program_rbv          | get loaded program   | str                     |
