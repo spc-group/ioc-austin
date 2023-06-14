@@ -32,7 +32,7 @@
   | ✓ |   |                         |                              | :program_saved        | isProgramSaved       | bool                    |
   | ✓ |   |                         |                              | :program_running      | running              | bool                    |
   | ✓ |   |                         |                              | :remote_control       | is in remote control | bool                    |
-  | ✓ |   |                         |                              | :polyscope_version    | PolyscopeVersion     | str                     |
+  | ✓ |   |                         |                              | :software_version    | PolyscopeVersion     | str                     |
   | ✓ | T |                         |                              | :serial_number        | get serial number    | str                     |
   | ✓ | T |                         |                              | :model_number         | get robot model      | str                     |
 
