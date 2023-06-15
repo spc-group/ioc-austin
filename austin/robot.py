@@ -24,6 +24,7 @@ from .driver import RobotDriver
 from .dashboard import DashboardGroup
 from .status import StatusGroup
 from .actions import TransferGroup, ActionsGroup
+from .alive import AliveGroup
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class RobotIOC(PVGroup):
     transfer = SubGroup(TransferGroup, prefix="transfer")
     actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
+    alive = SubGroup(AliveGroup, prefix="alive")
 
     def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):
         super().__init__(*args, **kwargs)
