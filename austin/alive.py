@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from contextlib import contextmanager
 import logging
 import sys
 import time
@@ -44,14 +45,16 @@ def heartbeat_message(magic_number: int, incarnation: int|float,
 
     https://epics-modules.github.io/alive/aliveRecord.html
 
+    *incarnation* and *current_time* are expected to be in unix time
+     and will be converted to epics time.
+
     """
-    EPICS_TIME_CORRECTION = -631152000
     PROTOCOL_VERSION = 5
     msg = bytes()
     msg += struct.pack(">L", magic_number)  # 0-3
     msg += struct.pack(">H", PROTOCOL_VERSION)  # 4-5
-    msg += struct.pack(">L", round(incarnation) + EPICS_TIME_CORRECTION)  # 6-9
-    msg += struct.pack(">L", round(current_time) + EPICS_TIME_CORRECTION)  # 10-13
+    msg += struct.pack(">L", round(epics_time(incarnation)))  # 6-9
+    msg += struct.pack(">L", round(epics_time(current_time)))  # 10-13
     msg += struct.pack(">L", heartbeat_value)  # 14-17
     msg += struct.pack(">H", period)  # 18-19
     msg += struct.pack(">H", flags)  # 20-21
@@ -64,10 +67,11 @@ def heartbeat_message(magic_number: int, incarnation: int|float,
 
 
 def epics_time(unix_time):
-    return unix_time + 631152000
+    return unix_time - 631152000
 
 
 class AliveGroup(PVGroup):
+    _sock = None
     incarnation: int
     default_ioc_name: str
     default_remote_host: str
@@ -90,9 +94,12 @@ class AliveGroup(PVGroup):
         self.default_remote_port = remote_port
         self.default_ioc_name = ioc_name
 
+    @contextmanager
     def socket(self):
         # Create the socket
-        return socket.socket(socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK) 
+        if self._sock is None:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK)
+        yield self._sock
         
     async def resolve_hostname(self, hostname):
         """Determine the host's IP address.
@@ -149,7 +156,8 @@ class AliveGroup(PVGroup):
           An open socket object.
         
         """
-        if self.hrtbt.value is False:
+        if self.hrtbt.value == "Off":
+            log.debug("No heartbeat this round, .HRTBT is off.")
             return False
         # Build TCP trigger flags
         flags = 0
@@ -162,7 +170,7 @@ class AliveGroup(PVGroup):
         message = heartbeat_message(
             magic_number=self.hmag.value,
             incarnation=self.incarnation,
-            current_time=epics_time(time.time()),
+            current_time=time.time(),
             heartbeat_value=next_heartbeat,
             period=self.hprd.value,
             flags=flags,
@@ -173,12 +181,12 @@ class AliveGroup(PVGroup):
         # Send the message
         addr, port = self.server_address()
         if addr is not None and port is not None:
-            log.info(f"Sending UDP to {(addr, port)}, #{next_heartbeat}")
+            print(f"Sending UDP to {(addr, port)}, #{next_heartbeat}")
             await self.send_udp_message(message=message, address=(addr, port))
             # Update the heartbeat counter
             await self.val.write(next_heartbeat)
         else:
-            print("Skipping heartbeat")
+            log.debug(f"Skipping heartbeat, {(addr, port)} invalid.")
 
     async def send_udp_message(self, message, address):
         """Open a socket and deliver the *message* via UDP to *address*."""
@@ -203,7 +211,7 @@ class AliveGroup(PVGroup):
     @val.startup
     async def val(self, instance, async_lib):
         self.async_lib = async_lib.library
-        self.incarnation = epics_time(time.time())
+        self.incarnation = time.time()
         await self.rhost.write(self.default_remote_host)
         await self.rport.write(self.default_remote_port)
 
@@ -274,7 +282,7 @@ class AliveGroup(PVGroup):
         read_only=True,
     )
     hrtbt = pvproperty(
-        name=".HRTBT", value=False, dtype=bool, doc="Heartbeating State", read_only=False
+        name=".HRTBT", value="Off", dtype=bool, doc="Heartbeating State", read_only=False
     )
     hprd = pvproperty(
         name=".HPRD", value=HEARTBEAT_PERIOD, dtype=int, doc="Heartbeat Period", read_only=True
