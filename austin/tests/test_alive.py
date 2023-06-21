@@ -1,17 +1,18 @@
 from unittest import mock
 import struct
 import asyncio
+import socket
 
 import pytest
 from caproto.server import SubGroup, PVGroup
 
-from ..alive import heartbeat_message, AliveGroup, epics_time
+from .. import alive
 
 
 
 
 def test_heartbeat_message():
-    result = heartbeat_message(magic_number=305419896,
+    result = alive.heartbeat_message(magic_number=305419896,
                                incarnation=1686795752.651364,
                                current_time=1686795860.727304,
                                heartbeat_value=25,
@@ -51,14 +52,15 @@ def test_heartbeat_message():
 
 
 class MockIOC(PVGroup):
-    alive = SubGroup(AliveGroup, sock=mock.MagicMock())
+    alive = SubGroup(alive.AliveGroup)
 
 
 @pytest.fixture
 def test_ioc():
     ioc = MockIOC(prefix="test_ioc:")
-    ioc.alive.incarnation = epics_time(1686882446.0032349)
+    ioc.alive.incarnation = alive.epics_time(1686882446.0032349)
     ioc.alive.async_lib = asyncio
+    ioc.alive.send_udp_message = mock.AsyncMock()
     ioc.alive
     yield ioc
 
@@ -66,7 +68,7 @@ def test_ioc():
 @pytest.mark.asyncio
 async def test_send_heartbeat(test_ioc):
     alive_group = test_ioc.alive
-    sock = alive_group.sock
+    sock = mock.MagicMock()
     # Send the message to the server
     await alive_group.raddr.write("192.0.2.0")
     await alive_group.rport.write(5895)
@@ -74,19 +76,19 @@ async def test_send_heartbeat(test_ioc):
     # First with the HRTBT field off (no heartbeat)
     await alive_group.send_heartbeat()
     assert alive_group.val.value == 5
-    assert not sock.sendto.called
+    assert not alive_group.send_udp_message.called
     # Now with the HRTBT field on (send heartbeat)
     await alive_group.hrtbt.write(True)
     await alive_group.send_heartbeat()
     assert alive_group.val.value == 6
     # Check the message was sent properly
-    assert sock.sendto.called
-    assert sock.sendto.call_args.args[1] == ("192.0.2.0", 5895)
+    assert alive_group.send_udp_message.called
+    assert alive_group.send_udp_message.call_args.kwargs['address'] == ("192.0.2.0", 5895)
 
 @pytest.mark.asyncio
 async def test_host_resolution(test_ioc):
     alive_group = test_ioc.alive
-    alive_group.sock.gethostbyname.return_value = "127.0.0.1"
+    # alive_group.sock.gethostbyname.return_value = "127.0.0.1"
     await alive_group.rhost.write("localhost")
     assert alive_group.raddr.value == "127.0.0.1"
 
@@ -118,24 +120,29 @@ async def test_heartbeat_flags(test_ioc):
     await alive_group.raddr.write("127.0.0.1")
     await alive_group.hrtbt.write(True)
     print("Values:", repr(alive_group.rport.value), alive_group.raddr.value)
+    sock = mock.MagicMock()
     await alive_group.send_heartbeat()
     # No flags set
-    sock = alive_group.sock
-    assert sock.sendto.called
-    message = sock.sendto.call_args.args[0]
+    assert alive_group.send_udp_message.called
+    message = alive_group.send_udp_message.call_args.kwargs['message']
     flags = struct.unpack(">H", message[20:22])[0]
     assert flags == 0b0
     # Flag for ITRIG being set
     sock.sendto.clear()
     await alive_group.itrig.write(1)
     await alive_group.send_heartbeat()
-    message = sock.sendto.call_args.args[0]
+    message = alive_group.send_udp_message.call_args.kwargs['message']
     flags = struct.unpack(">H", message[20:22])[0]
     assert flags == 0b1
     # Flag for ISUP being set
     sock.sendto.clear()
     await alive_group.isup.write(1)
     await alive_group.send_heartbeat()
-    message = sock.sendto.call_args.args[0]
+    message = alive_group.send_udp_message.call_args.kwargs['message']
     flags = struct.unpack(">H", message[20:22])[0]
     assert flags == 0b11
+
+
+async def test_ioc_name():
+    alive_group = test_ioc.alive
+    

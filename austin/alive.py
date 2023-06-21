@@ -22,6 +22,8 @@ from caproto.server import (
     scan_wrapper,
 )
 
+log = logging.getLogger(__name__)
+
 
 HEARTBEAT_PERIOD = 15
 
@@ -73,14 +75,15 @@ class AliveGroup(PVGroup):
         OPERABLE = 1
         INOPERABLE = 2
 
-    def __init__(self, sock: socket.socket=None, remote_host: str="localhost", remote_port: int=5678, *args, **kwargs):
-        if sock is None:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK)
-        self.sock = sock
+    def __init__(self, remote_host: str="localhost", remote_port: int=5678, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_remote_host = remote_host
         self.default_remote_port = remote_port
 
+    def socket(self):
+        # Create the socket
+        return socket.socket(socket.AF_INET, socket.SOCK_DGRAM | socket.SOCK_NONBLOCK) 
+        
     async def resolve_hostname(self, hostname):
         """Determine the host's IP address.
 
@@ -132,6 +135,8 @@ class AliveGroup(PVGroup):
         =======
         heartbeat_sent
           True if the heartbeat message was sent, otherwise false.
+        sock
+          An open socket object.
         
         """
         if self.hrtbt.value is False:
@@ -156,14 +161,21 @@ class AliveGroup(PVGroup):
             ioc_name="",
         )
         # Send the message
-        loop = self.async_lib.get_running_loop()
         addr, port = self.server_address()
         if addr is not None and port is not None:
-            print(f"Sending UDP to {(addr, port)}, #{next_heartbeat}")
-            await loop.sock_sendto(sock=self.sock, data=message, address=(addr, port))
+            log.info(f"Sending UDP to {(addr, port)}, #{next_heartbeat}")
+            await self.send_udp_message(message=message, address=(addr, port))
+            # Update the heartbeat counter
             await self.val.write(next_heartbeat)
         else:
             print("Skipping heartbeat")
+
+    async def send_udp_message(self, message, address):
+        """Open a socket and deliver the *message* via UDP to *address*."""
+        with self.socket() as sock:
+            sock.connect(address)
+            loop = self.async_lib.get_running_loop()
+            await loop.sock_sendall(sock=sock, data=message)
     
     val = pvproperty(
         name=".VAL",
