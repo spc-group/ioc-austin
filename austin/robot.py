@@ -41,7 +41,7 @@ class RobotIOC(PVGroup):
     transfer = SubGroup(TransferGroup, prefix="transfer")
     actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
-    alive = SubGroup(AliveGroup, prefix="alive")
+    alive = SubGroup(AliveGroup, prefix="alive", remote_host="localhost")
 
     def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):
         super().__init__(*args, **kwargs)

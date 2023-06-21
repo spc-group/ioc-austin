@@ -143,6 +143,25 @@ async def test_heartbeat_flags(test_ioc):
     assert flags == 0b11
 
 
-async def test_ioc_name():
-    alive_group = test_ioc.alive
-    
+@pytest.mark.asyncio
+async def test_ioc_name(monkeypatch):
+    ioc = alive.AliveGroup(prefix="alive")
+    # Check that if fails if no IOC name is discernable
+    with pytest.raises(alive.NoIOCName):
+        await ioc.iocnm.startup(ioc.iocnm, None)
+    # Check parent IOC prefix
+    IOC = type('IOC', (PVGroup,), {"alive": SubGroup(alive.AliveGroup)})
+    ioc = IOC(prefix="my_awesome_ioc:")
+    await ioc.alive.iocnm.startup(ioc.alive.iocnm, None)
+    assert ioc.alive.iocnm.value == "my_awesome_ioc"
+    # Check IOC environmental variable
+    monkeypatch.setenv("IOC", "our_ioc")
+    IOC = type('IOC', (PVGroup,), {"alive": SubGroup(alive.AliveGroup)})
+    ioc = IOC(prefix="my_awesome_ioc")
+    await ioc.alive.iocnm.startup(ioc.alive.iocnm, None)
+    assert ioc.alive.iocnm.value == "our_ioc"
+    # Check explicit IOC name as argument
+    IOC = type('IOC', (PVGroup,), {"alive": SubGroup(alive.AliveGroup, ioc_name="my_ioc")})
+    ioc = IOC(prefix="my_awesome_ioc")
+    await ioc.alive.iocnm.startup(ioc.alive.iocnm, None)
+    assert ioc.alive.iocnm.value == "my_ioc"

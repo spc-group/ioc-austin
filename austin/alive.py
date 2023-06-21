@@ -6,6 +6,7 @@ import asyncio
 from functools import partial
 from threading import Lock
 import re
+import os
 import enum
 import struct
 import socket
@@ -26,6 +27,11 @@ log = logging.getLogger(__name__)
 
 
 HEARTBEAT_PERIOD = 15
+
+
+class NoIOCName(AttributeError):
+    """Could not discern a valid name for this IOC."""
+    ...
 
 
 def heartbeat_message(magic_number: int, incarnation: int|float,
@@ -63,6 +69,9 @@ def epics_time(unix_time):
 
 class AliveGroup(PVGroup):
     incarnation: int
+    default_ioc_name: str
+    default_remote_host: str
+    default_remote_port: int
 
     class HostReadStatus(enum.IntEnum):
         IDLE = 0
@@ -75,10 +84,11 @@ class AliveGroup(PVGroup):
         OPERABLE = 1
         INOPERABLE = 2
 
-    def __init__(self, remote_host: str="localhost", remote_port: int=5678, *args, **kwargs):
+    def __init__(self, remote_host: str="localhost", remote_port: int=5678, ioc_name: str=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_remote_host = remote_host
         self.default_remote_port = remote_port
+        self.default_ioc_name = ioc_name
 
     def socket(self):
         # Create the socket
@@ -158,7 +168,7 @@ class AliveGroup(PVGroup):
             flags=flags,
             return_port=self.iport.value,
             user_message=self.msg.value,
-            ioc_name="",
+            ioc_name=self.iocnm.value,
         )
         # Send the message
         addr, port = self.server_address()
@@ -277,6 +287,33 @@ class AliveGroup(PVGroup):
         doc="IOC Name Value",
         read_only=True,
     )
+    @iocnm.startup
+    async def iocnm(self, instance, asyncio_lib):
+        """Set the IOC name based on the following, in order:
+
+        1. Given as *ioc_name* to the alive record constructor.
+        2. IOC environmental variable
+        3. Prefix of the parent
+        
+        """
+        # Determine best ioc name
+        if self.default_ioc_name is not None:
+            # Use explicit initialization value
+            ioc_name = self.default_ioc_name
+        elif "IOC" in os.environ.keys():
+            # Use environmental variable
+            ioc_name = os.environ['IOC']
+        elif self.parent is not None:
+            # Default, use this group's parent's prefix
+            ioc_name = self.parent.prefix.strip(' .:')
+        else:
+            # Could not determine the ioc name
+            raise NoIOCName("AliveGroup has no IOC name. "
+                            "Please provide *ioc_name* init parameter, "
+                            "or set *IOC* environment variable.")
+        # Set IOC name for later sending to the alive daemon
+        await instance.write(ioc_name)
+        
     hmag = pvproperty(
         name=".HMAG",
         value=305419896,
