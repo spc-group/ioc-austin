@@ -19,6 +19,7 @@ from caproto.server import (
     SubGroup,
     pvfunction,
 )
+from caprotoapps import AliveGroup
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
@@ -40,6 +41,7 @@ class RobotIOC(PVGroup):
     transfer = SubGroup(TransferGroup, prefix="transfer")
     actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
+    alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
 
     def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):
         super().__init__(*args, **kwargs)

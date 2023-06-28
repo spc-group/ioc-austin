@@ -1,0 +1,42 @@
+name: ioc-austin
+
+# use:
+# prefer micromamba (conda takes much longer, if ever, to solve)
+# micromamba installed in ~30s
+#   date; micromamba create -y -n haven -f ./environment.yml; date
+#   # then activate with:
+#   eval "$(micromamba shell hook --shell=bash)"
+#   micromamba activate haven
+# conda installed in ~250s
+#   date; conda env create --force -f ./environment.yml; date
+#   # then activate with:
+#   conda activate haven
+
+variables:
+  PYDM_DEFAULT_PROTOCOL: ca
+
+channels:
+  - conda-forge
+
+dependencies:
+  # --- Python core packages
+  - python>=3.10  # Until this is fixed in pydm: https://github.com/slaclab/pydm/issues/951
+
+  # --- testing and quality assurance
+  - black
+  - flake8
+  - pylint
+  - pytest
+  - pytest-cov
+  - pytest-mock
+  - pytest
+  - pytest-asyncio
+  - caproto >=1.1.0
+
+  # --- Bluesky framework packages
+  - pydm >=1.19.0
+
+  # --- packaging and publishing
+  - coverage
+  - poetry
+  - sphinx
