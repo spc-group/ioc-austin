@@ -2,6 +2,10 @@
  IOC Austin
 ============
 
+Austin **depends on the caproto-apps package** for communicating with
+an IOC Alive server. Make sure to install it first: ``pip install
+caproto-apps``.
+
 Using the IOC
 =============
 
