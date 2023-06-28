@@ -19,12 +19,12 @@ from caproto.server import (
     SubGroup,
     pvfunction,
 )
+from caprotoapps import AliveGroup
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
 from .status import StatusGroup
 from .actions import TransferGroup, ActionsGroup
-from .alive import AliveGroup
 
 log = logging.getLogger(__name__)
 
