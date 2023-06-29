@@ -40,7 +40,12 @@ class RobotDriver:
         try:
             self.sock.sendall((command + "\n").encode())
             return self.get_reply()
-        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError):
+        except (
+            ConnectionResetError,
+            ConnectionAbortedError,
+            BrokenPipeError,
+            TimeoutError,
+        ):
             msg = f"The connection was lost to the robot ({self.robot_ip}:{self.port})."
             msg += " Please connect and try running again."
             log.warning(msg)

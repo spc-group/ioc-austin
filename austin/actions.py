@@ -103,12 +103,10 @@ class TransferGroup(PVGroup):
 
 
 class ActionsGroup(PVGroup):
-
     class DanceStyles(enum.IntEnum):
         JAZZ = 0
         BREAK = 1
         TAP = 2
-
 
     @pvfunction(default=[0], prefix="dance:")
     async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:

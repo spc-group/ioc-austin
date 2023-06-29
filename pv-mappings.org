@@ -32,7 +32,7 @@
   | ✓ |   |                         |                              | :program_saved        | isProgramSaved       | bool                    |
   | ✓ |   |                         |                              | :program_running      | running              | bool                    |
   | ✓ |   |                         |                              | :remote_control       | is in remote control | bool                    |
-  | ✓ |   |                         |                              | :software_version    | PolyscopeVersion     | str                     |
+  | ✓ |   |                         |                              | :software_version     | PolyscopeVersion     | str                     |
   | ✓ | T |                         |                              | :serial_number        | get serial number    | str                     |
   | ✓ | T |                         |                              | :model_number         | get robot model      | str                     |
 
@@ -48,7 +48,31 @@
    - generate flight report
    - generate support file
    - version (unrecognized)
-* State (25idAustin:robot)
-  - TBD
+* Gripper (25idAustin:gripper)
+  | PV Suffix | dtype | Read-only | Putter | Scan | Desc                                    |
+  |-----------+-------+-----------+--------+------+-----------------------------------------|
+  | .ACT      | bool  |           |        | Y    | Whether the gripper is activate         |
+  | .CLS      | float | Y         |        | Y    | Calibrated "closed" position            |
+  | .OPN      | float | Y         |        | Y    | Calibrated "open" position              |
+  | .CAL      | bool  |           | Y      |      | Calibrate the robot's open/closed range |
+  | .RBV      | float | Y         |        | Y    | Current gripper position readback value |
+  | .VAL      | float |           | Y      |      | Desired position set point              |
+  | .VEL      | float |           |        |      | How fast the gripper should move        |
+  | .FRC      | float |           |        |      | How much force the gripper may apply    |
+
+** Questions
+   1. Are scanned parameters correct?
+   2. How does "calibrate" relate to the calibrated positions?
+   3. Do we need a global lock for comms via urx?
 * Actions
-  - TBD
+
+  Each action represents a python function.
+  
+  The IOC get PVs for the typed arguments to the function, plus PVs to
+  fun the function, report busy status, and return a value.
+  
+** Pick (25idAustin:pick)
+   async def pick(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+** Place (25idAustin:place)
+   async def place(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+   
