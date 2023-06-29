@@ -69,7 +69,7 @@
   Each action represents a python function.
   
   The IOC get PVs for the typed arguments to the function, plus PVs to
-  fun the function, report busy status, and return a value.
+  run the function (:Process), report busy status (:Status), and return a value (:Retval).
   
 ** Pick (25idAustin:pick)
    async def pick(i: float, j:float, k: float, l: float, m: float, n: float) -> int
