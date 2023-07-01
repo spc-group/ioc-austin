@@ -28,17 +28,19 @@ log = logging.getLogger(__name__)
 
 
 class ActionsGroup(PVGroup):
-    class DanceStyles(enum.IntEnum):
-        JAZZ = 0
-        BREAK = 1
-        TAP = 2
+    """PVs for RPC actions that the robot can perform."""
 
-    @pvfunction(default=[0], prefix="dance:")
-    async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:
-        print(f"Dancing with style: '{style}'")
-        await asyncio.sleep(5)
-        print("done dancing")
-        return True
+    # class DanceStyles(enum.IntEnum):
+    #     JAZZ = 0
+    #     BREAK = 1
+    #     TAP = 2
+
+    # @pvfunction(default=[0], prefix="dance:")
+    # async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:
+    #     print(f"Dancing with style: '{style}'")
+    #     await asyncio.sleep(5)
+    #     print("done dancing")
+    #     return True
 
     @pvfunction(default=[0], prefix="pick:")
     async def pick(
@@ -50,7 +52,7 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        print(f"Running ``pick()`` with {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+        print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="place:")
     async def place(
@@ -62,4 +64,16 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        print(f"Running ``place()`` with {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+        print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+
+    @pvfunction(default=[0], prefix="home:")
+    async def home(
+        self,
+        i: float = 0.0,
+        j: float = 0.0,
+        k: float = 0.0,
+        l: float = 0.0,
+        m: float = 0.0,
+        n: float = 0.0,
+    ) -> int:
+        print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")

@@ -40,10 +40,17 @@ class RobotIOC(PVGroup):
     _lock = Lock()
 
     # Robot-related PVs
-    robot = SubGroup(StatusGroup, prefix="robot")
+    status = SubGroup(StatusGroup, prefix="")
     actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
     gripper = SubGroup(GripperGroup, prefix="gripper")
+    busy = pvproperty(
+        name="busy",
+        value=False,
+        doc="Whether the global run lock is being held.",
+        read_only=True,
+    )
+
 
     # Support PVs
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
@@ -70,9 +77,9 @@ class RobotIOC(PVGroup):
             # Lock is not available, raise exception
             raise RobotBusy("Another action is already being executed on this robot.")
         else:
-            await self.robot.busy.write(1)
+            await self.busy.write(1)
 
     async def unlock(self):
         """Allow other actions to happen on the robot again."""
         self._lock.release()
-        await self.robot.busy.write(0)
+        await self.busy.write(0)

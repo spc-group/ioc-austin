@@ -2,6 +2,8 @@ import logging
 import time
 import socket
 
+import numpy as np
+
 
 # Set up logging
 log = logging.getLogger(__name__)
@@ -83,3 +85,19 @@ class RobotDriver:
         # robot doing slow things.
         time.sleep(5)
         print("done", flush=True)
+
+    def move_joints(self, joints, acc, vel):
+        print(f"Moving {joints=} ({acc=}, {vel=})")
+
+    def get_joints(self):
+        print("Retrieving joint positions.")
+        return np.random.rand(6)
+
+    def move_position(self, pos, acc, vel):
+        print(f"Moving {pos=} ({acc=}, {vel=})")
+
+    def get_position(self):
+        print("Retrieving cartesian positions.")
+        return np.random.rand(6)
+
+    
