@@ -17,12 +17,15 @@ from caproto.server import (
     PvpropertyShortRO,
     PvpropertyChar,
     SubGroup,
+    pvfunction,
 )
+from caprotoapps import AliveGroup
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
 from .status import StatusGroup
-from .actions import TransferGroup
+from .actions import ActionsGroup
+from .gripper import GripperGroup
 
 log = logging.getLogger(__name__)
 
@@ -36,9 +39,21 @@ class RobotBusy(RuntimeError):
 class RobotIOC(PVGroup):
     _lock = Lock()
 
-    robot = SubGroup(StatusGroup, prefix="robot")
-    transfer = SubGroup(TransferGroup, prefix="transfer")
+    # Robot-related PVs
+    status = SubGroup(StatusGroup, prefix="")
+    actions = SubGroup(ActionsGroup, prefix="")
     dashboard = SubGroup(DashboardGroup, prefix="dashboard")
+    gripper = SubGroup(GripperGroup, prefix="gripper")
+    busy = pvproperty(
+        name="busy",
+        value=False,
+        doc="Whether the global run lock is being held.",
+        read_only=True,
+    )
+
+
+    # Support PVs
+    alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
 
     def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,9 +77,9 @@ class RobotIOC(PVGroup):
             # Lock is not available, raise exception
             raise RobotBusy("Another action is already being executed on this robot.")
         else:
-            await self.robot.busy.write(1)
+            await self.busy.write(1)
 
     async def unlock(self):
         """Allow other actions to happen on the robot again."""
         self._lock.release()
-        await self.robot.busy.write(0)
+        await self.busy.write(0)

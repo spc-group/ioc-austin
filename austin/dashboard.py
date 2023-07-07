@@ -22,8 +22,8 @@ from caproto.server import (
 
 from .driver import RobotDriver, RobotDisconnected
 
-
-POLL_TIME = 0.5
+POLL_SLOWDOWN = 60  # Should be 1 for normal operation, high for debugging
+POLL_TIME = 0.5 * POLL_SLOWDOWN
 
 
 def reset_trigger(value):
@@ -76,7 +76,6 @@ class OperationalMode(enum.IntEnum):
 
 
 class DashboardGroup(PVGroup):
-
     lock: asyncio.Lock = None
 
     async def send_command(self, message: str, fmt: str = None):
@@ -183,7 +182,11 @@ class DashboardGroup(PVGroup):
         max_length=255,
     )
     installation = installation.putter(
-        partial(put_command, message="load installation {value}", fmt="Loading installation: (.+)")
+        partial(
+            put_command,
+            message="load installation {value}",
+            fmt="Loading installation: (.+)",
+        )
     )
 
     play = pvproperty(
@@ -375,15 +378,16 @@ class DashboardGroup(PVGroup):
         read_only=True,
         doc="Reports the current robot operating mode.",
     )
+
     @robot_mode.scan(POLL_TIME)
     async def robot_mode(self, instance, async_lib):
         new_val = await self.send_command(message="robotmode", fmt="Robotmode: (.+)")
         if new_val is not None and new_val != instance.value:
-            await instance.write(new_val)        
+            await instance.write(new_val)
             # Set the power on/off state based on the new mode
             power_state = getattr(RobotMode, new_val) >= RobotMode.POWER_ON
             await self.power_rbv.write(power_state)
-    
+
     program_state = pvproperty(
         name=":program_state",
         value=ProgramState.UNKNOWN,
@@ -405,6 +409,7 @@ class DashboardGroup(PVGroup):
         value=False,
         doc="Powers the robot arm on and off."
     )
+
     @power.putter
     async def power(self, instance, value):
         """Turn the robot arm power on or off."""
@@ -414,8 +419,15 @@ class DashboardGroup(PVGroup):
             cmd = "power off"
         else:
             raise ValueError(f"Power setting must be 'On' or 'Off'. Got: {value}")
-        return await self.put_command(instance, value, message=cmd,
-                               fmt="Powering (.+)", convert=lambda x: x=="on")
+        return await self.put_command(
+            instance,
+            value,
+            message=cmd,
+            fmt="Powering (.+)",
+            convert=lambda x: x == "on",
+        )
+
+>>>>>>> 5fd3cf7550a02990815b2f0d700a0d5cd6bdc6e6
     # Read-back value for power state is set during ``robot_mode`` scan
     power_rbv = pvproperty(
         name=":power_rbv",
@@ -423,14 +435,18 @@ class DashboardGroup(PVGroup):
         dtype=bool,
         read_only=True,
         doc="The current power on/off state.",
-    )        
+    )
 
     # PVs for change/reading the Robot's operational mode
     operational_mode = pvproperty(
         name=":operational_mode",
         value=OperationalMode.MANUAL,
         doc="The requested operational mode: MANUAL or AUTOMATIC (the password has not been set).",
-        put=partial(put_command, message="set operational mode {value}", fmt="Operational mode '(.+)' is set"),
+        put=partial(
+            put_command,
+            message="set operational mode {value}",
+            fmt="Operational mode '(.+)' is set",
+        ),
     )
     operational_mode_rbv = pvproperty(
         name=":operational_mode_rbv",

@@ -22,7 +22,7 @@
   | ✓ |   | :close_safety_popup     | close safety popup           |                       |                      | bool                    |
   | ✓ |   | :operational_mode       | set operational mode <value> | :operational_mode_rbv | get operational mode | enum (manual/automatic) |
   | ✓ |   | :power                  | power on / power off         | :power_rbv            | [check robot mode?]  | bool                    |
-  | ✓ |   | :unlock_protective_stop | unlock_protective_stop       |                       |                      | bool                    |
+  | ✓ |   | :unlock_protective_stop | unlock protective stop       |                       |                      | bool                    |
   | ✓ |   | :restart_safety         | restart safety               |                       |                      | bool                    |
   | ✓ |   | :installation           | load installation <value>    |                       |                      | str                     |
   | ✓ |   | :program                | load <value>                 | :program_rbv          | get loaded program   | str                     |
@@ -32,7 +32,7 @@
   | ✓ |   |                         |                              | :program_saved        | isProgramSaved       | bool                    |
   | ✓ |   |                         |                              | :program_running      | running              | bool                    |
   | ✓ |   |                         |                              | :remote_control       | is in remote control | bool                    |
-  | ✓ |   |                         |                              | :polyscope_version    | PolyscopeVersion     | str                     |
+  | ✓ |   |                         |                              | :software_version     | PolyscopeVersion     | str                     |
   | ✓ | T |                         |                              | :serial_number        | get serial number    | str                     |
   | ✓ | T |                         |                              | :model_number         | get robot model      | str                     |
 
@@ -48,7 +48,55 @@
    - generate flight report
    - generate support file
    - version (unrecognized)
-* State (25idAustin:robot)
-  - TBD
+* Status (25idAustin)
+  Joint and position PV may have a .VAL and .RBV field
+  
+  | PV Suffix     | Has .RBV field? | Read-only | Putter | Dtype | Desc                                     |
+  |---------------+-----------------+-----------+--------+-------+------------------------------------------|
+  | :i            | .RBV            |           | Y      | float | Position of the first joint              |
+  | :j            | .RBV            |           | Y      | float | Position of the second joint             |
+  | :k            | .RBV            |           | Y      | float | Position of the third joint              |
+  | :l            | .RBV            |           | Y      | float | Position of the fourth joint             |
+  | :m            | .RBV            |           | Y      | float | Position of the fifth joint              |
+  | :n            | .RBV            |           | Y      | float | Position of the sixth joint              |
+  | :x            | .RBV            |           | Y      | float | Cartesion position x                     |
+  | :y            | .RBV            |           | Y      | float | Cartesion position y                     |
+  | :z            | .RBV            |           | Y      | float | Cartesion position z                     |
+  | :rx           | .RBV            |           | Y      | float | Rotation around the x axis               |
+  | :ry           | .RBV            |           | Y      | float | Rotation around the y axis               |
+  | :rz           | .RBV            |           | Y      | float | Rotation around the z axis               |
+  | :busy         |                 | Y         |        | bool  | Whether the run lock is acquired         |
+  | :acceleration |                 |           |        | float | Acceleration setting for robot movements |
+  | :velocity     |                 |           |        | float | Velocity setting for robot movements     |
+** [0/1] Tasks/Questions
+   - [ ] Should we assume the driver will handle threads
+   - [ ] Sort out the busy signal
+* Gripper (25idAustin:gripper)
+  | PV Suffix | dtype | Read-only | Putter | Scan | Desc                                    |
+  |-----------+-------+-----------+--------+------+-----------------------------------------|
+  | .ACT      | bool  |           |        | Y    | Whether the gripper is activate         |
+  | .CLS      | float | Y         |        | Y    | Calibrated "closed" position            |
+  | .OPN      | float | Y         |        | Y    | Calibrated "open" position              |
+  | .CAL      | bool  |           | Y      |      | Calibrate the robot's open/closed range |
+  | .RBV      | float | Y         |        | Y    | Current gripper position readback value |
+  | .VAL      | float |           | Y      |      | Desired position set point              |
+  | .VEL      | float |           |        |      | How fast the gripper should move        |
+  | .FRC      | float |           |        |      | How much force the gripper may apply    |
+
+** Questions
+   1. Are scanned parameters correct?
+   2. How does "calibrate" relate to the calibrated positions?
+   3. Do we need a global lock for comms via urx?
 * Actions
-  - TBD
+
+  Each action represents a python function.
+  
+  The IOC get PVs for the typed arguments to the function, plus PVs to
+  run the function (:Process), report busy status (:Status), and return a value (:Retval).
+  
+** Pick (25idAustin:pick)
+   async def pick(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+** Place (25idAustin:place)
+   async def place(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+** Home (25idAustin:home)
+   async def home(i: float, j:float, k: float, l: float, m: float, n: float) -> int
