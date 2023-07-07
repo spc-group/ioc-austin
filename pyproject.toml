@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ioc-austin"
+version = "0.0.0"
+authors = [
+  { name="Mark Wolfman", email="wolfman@anl.gov" },
+]
+description = "A channel-access input-output controller for 25-ID-C robot"
+readme = "README.rst"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Hardware",
+]
+keywords = ["caproto", "controls"]
+dependencies = ["caproto", "caproto-apps"]
+
+[project.optional-dependencies]
+dev = ["black", "pytest", "pytest-asyncio"]
+
+[project.urls]
+Homepage = "https://github.com/spc-group/ioc-austin"
+
+[project.scripts]
+start_25idAustin = "austin.__main__:main"

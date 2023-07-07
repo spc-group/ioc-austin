@@ -50,10 +50,12 @@ class StatusGroup(PVGroup):
         velocity = self.velocity.value
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
-        do_mov = partial(self.parent.driver.move_joints,
-                    joints = new_joints,
-                    acc = acceleration,
-                    vel=velocity)
+        do_mov = partial(
+            self.parent.driver.move_joints,
+            joints=new_joints,
+            acc=acceleration,
+            vel=velocity,
+        )
         await loop.run_in_executor(None, do_mov)
 
     async def move_position(self, instance, value):
@@ -80,10 +82,9 @@ class StatusGroup(PVGroup):
         velocity = self.velocity.value
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
-        do_move = partial(self.parent.driver.move_pos,
-                    pos = new_pos,
-                    acc = acceleration,
-                    vel=velocity)
+        do_move = partial(
+            self.parent.driver.move_pos, pos=new_pos, acc=acceleration, vel=velocity
+        )
         await loop.run_in_executor(None, do_move)
 
     # Joint positions
@@ -199,7 +200,14 @@ class StatusGroup(PVGroup):
         # Get current position
         new_pos = await loop.run_in_executor(None, self.parent.driver.get_position)
         # Update PVs with new joint positions
-        pvs = [self.x_rbv, self.y_rbv, self.z_rbv, self.rx_rbv, self.ry_rbv, self.rz_rbv]
+        pvs = [
+            self.x_rbv,
+            self.y_rbv,
+            self.z_rbv,
+            self.rx_rbv,
+            self.ry_rbv,
+            self.rz_rbv,
+        ]
         for pv, val in zip(pvs, new_pos):
             await pv.write(val)
 

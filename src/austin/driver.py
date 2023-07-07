@@ -99,5 +99,3 @@ class RobotDriver:
     def get_position(self):
         print("Retrieving cartesian positions.")
         return np.random.rand(6)
-
-    

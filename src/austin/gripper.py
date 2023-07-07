@@ -45,7 +45,7 @@ class GripperGroup(PVGroup):
     async def act(self, instance, value):
         if value == "On":
             print("Activating the gripper")
-        elif value = "Off":
+        elif value == "Off":
             print("Deactivating the gripper")
         return "Off"
 

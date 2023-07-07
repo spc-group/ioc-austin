@@ -36,7 +36,11 @@ class RobotBusy(RuntimeError):
     ...
 
 
-class RobotIOC(PVGroup):
+class AustinIOC(PVGroup):
+    """An input output controller for the 25-ID-C universal robots sample
+    changing robot.
+
+    """
     _lock = Lock()
 
     # Robot-related PVs
@@ -50,7 +54,6 @@ class RobotIOC(PVGroup):
         doc="Whether the global run lock is being held.",
         read_only=True,
     )
-
 
     # Support PVs
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")

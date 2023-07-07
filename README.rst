@@ -11,11 +11,17 @@ Using the IOC
 
 An IOC for the Austin Universal Robot at sector 25.
 
-To use, install caproto and run the following from this directory:
+To use, install the IOC once with
+
+.. code:: bash
+
+   pip install -e .
+
+Then run it with:
 
 .. code:: bash
 	  
-   python -m austin.start_ioc --list-pvs
+   start_25idAustin --list-pvs
 
 Dashboard Commands
 ------------------
