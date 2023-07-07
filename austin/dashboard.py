@@ -427,7 +427,6 @@ class DashboardGroup(PVGroup):
             convert=lambda x: x == "on",
         )
 
->>>>>>> 5fd3cf7550a02990815b2f0d700a0d5cd6bdc6e6
     # Read-back value for power state is set during ``robot_mode`` scan
     power_rbv = pvproperty(
         name=":power_rbv",
