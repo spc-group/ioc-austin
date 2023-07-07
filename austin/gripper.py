@@ -41,6 +41,14 @@ class GripperGroup(PVGroup):
     async def act(self, instance, async_lib):
         print("Checking for changes to activated status.")
 
+    @act.putter
+    async def act(self, instance, value):
+        if value == "On":
+            print("Activating the gripper")
+        elif value = "Off":
+            print("Deactivating the gripper")
+        return "Off"
+
     cls = pvproperty(
         name=".CLS",
         dtype=float,
@@ -99,7 +107,7 @@ class GripperGroup(PVGroup):
     async def val(self, instance, value):
         # Launch the calibration script here
         print(f"Moving the gripper to {value}")
-
+        
     vel = pvproperty(
         name=".VEL", dtype=float, value=0, doc="How fast the gripper should move"
     )

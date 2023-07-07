@@ -72,9 +72,10 @@
    - [ ] Should we assume the driver will handle threads
    - [ ] Sort out the busy signal
 * Gripper (25idAustin:gripper)
+
   | PV Suffix | dtype | Read-only | Putter | Scan | Desc                                    |
   |-----------+-------+-----------+--------+------+-----------------------------------------|
-  | .ACT      | bool  |           |        | Y    | Whether the gripper is activate         |
+  | .ACT      | bool  |           | Y      | Y    | Whether the gripper is activate         |
   | .CLS      | float | Y         |        | Y    | Calibrated "closed" position            |
   | .OPN      | float | Y         |        | Y    | Calibrated "open" position              |
   | .CAL      | bool  |           | Y      |      | Calibrate the robot's open/closed range |
@@ -84,9 +85,10 @@
   | .FRC      | float |           |        |      | How much force the gripper may apply    |
 
 ** Questions
-   1. Are scanned parameters correct?
-   2. How does "calibrate" relate to the calibrated positions?
-   3. Do we need a global lock for comms via urx?
+   1. Can we caput the calibrated open/close gripper positions?
+   2. Are scanned parameters correct?
+   3. How does "calibrate" relate to the calibrated positions?
+   4. Do we need a global lock for comms via urx?
 * Actions
 
   Each action represents a python function.
@@ -96,6 +98,14 @@
   
 ** Pick (25idAustin:pick)
    async def pick(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+
+   25idAustin:pick:i
+   25idAustin:pick:j
+   ...
+   25idAustin:pick:n
+   25idAustin:pick:Process
+   25idAustin:pick:RetVal
+   25idAustin:pick:Status
 ** Place (25idAustin:place)
    async def place(i: float, j:float, k: float, l: float, m: float, n: float) -> int
 ** Home (25idAustin:home)
