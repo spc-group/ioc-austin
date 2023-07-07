@@ -401,17 +401,20 @@ class DashboardGroup(PVGroup):
     # PVs for change/reading the power state
     power = pvproperty(
         name=":power",
+        dtype=bool,
         value=False,
         doc="Powers the robot arm on and off."
     )
     @power.putter
     async def power(self, instance, value):
         """Turn the robot arm power on or off."""
-        if value:
+        if value == "On":
             cmd = "power on"
-        else:
+        elif value == "Off":
             cmd = "power off"
-        await self.put_command(instance, value, message=cmd,
+        else:
+            raise ValueError(f"Power setting must be 'On' or 'Off'. Got: {value}")
+        return await self.put_command(instance, value, message=cmd,
                                fmt="Powering (.+)", convert=lambda x: x=="on")
     # Read-back value for power state is set during ``robot_mode`` scan
     power_rbv = pvproperty(
