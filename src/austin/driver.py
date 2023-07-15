@@ -1,14 +1,22 @@
 import logging
 import time
-import socket
+from copy import deepcopy
 
 import numpy as np
+
+import socket
+
+from urx import Robot, RobotException
+import austin.robotiq_gripper as robotiq_gripper
 
 
 # Set up logging
 log = logging.getLogger(__name__)
 
+# Input for parameters
+homej0 = [1,2,3,4,5,6]
 
+#
 class RobotDisconnected(ConnectionError):
     ...
 
@@ -26,9 +34,22 @@ class RobotDriver:
         self.sock.settimeout(timeout)
         self.connect()
 
+        self.ur = None
+        self.acceleration = 0.5
+        self.velocity = 0.2
+               
+        self.gripper = None
+        self.gripper_close = 2 # 0 is closed
+        self.gripper_open = 40
+        self.gripper_speed = 40 # 0-50
+        self.gripper_force = 20 # 0-100
+        
+
+        
+
     def connect(self):
         try:
-            self.sock.connect((self.robot_ip, self.port))
+            self.ur = self.sock.connect((self.robot_ip, self.port))
         except Exception as exp:
             msg = f"Could not connect to robot: {self.robot_ip}"
             log.error(msg)
@@ -72,30 +93,112 @@ class RobotDriver:
                 break
         return collected.decode("utf-8")
 
-    def mood(self):
-        """Joke routine. How is the robot feeling right now?"""
-        moods = ["bored", "happy", "sad", "sleepy", "hungry"]
-        now = time.time()
-        mood_idx = int((now / 10) % len(moods))
-        return moods[mood_idx]
+    # transfer functions 
+    def get_joint_angles(self):
+        return self.connect.getj()
 
-    def transfer(self, pos1, pos2):
-        print(f"Moving robot from {pos1} to {pos2}.")
-        # Move the robot here. ``time.sleep`` is a placeholder for the
-        # robot doing slow things.
-        time.sleep(5)
-        print("done", flush=True)
+    def homej(self, home_location = None):
+        """
+        Description: Moves the robot to the home location.
+        """
+        print("Homing the robot...")
+        if home_location:
+            home_loc = home_location
+        else:
+            home_loc = homej0
+        self.ur.movej(home_loc, self.acceleration, self.velocity, wait=True)
+        print("Robot moved to home location")
+    
+    def pickj(self, pick_goal):
+        '''Pick up from first goal position'''
+        above_goal = deepcopy(pick_goal)
+        above_goal[2] += 0.05  
+    
+        print('Moving to above goal position')
+        self.ur.movel(above_goal, self.acceleration, self.velocity, wait=True)
+    
+        print('Opening gripper')
+        self.gripper.move_and_wait_for_pos(self.gripper_open, self.gripper_speed, self.gripper_force)    
+    
+        print('Moving to goal position')
+        self.ur.movel(pick_goal, self.acceleration, self.velocity, wait=True)
+    
+        print('Closing gripper')
+        self.gripper.move_and_wait_for_pos(self.gripper_close, self.gripper_speed, self.gripper_force)
+    
+        print('Moving back to above goal position')
+        self.ur.movel(above_goal, self.acceleration, self.velocity, wait=True)
 
-    def move_joints(self, joints, acc, vel):
-        print(f"Moving {joints=} ({acc=}, {vel=})")
+    def placej(self, place_goal):
 
-    def get_joints(self):
-        print("Retrieving joint positions.")
-        return np.random.rand(6)
+        '''Place down at second goal position'''
 
-    def move_position(self, pos, acc, vel):
-        print(f"Moving {pos=} ({acc=}, {vel=})")
+        above_goal = deepcopy(place_goal)
+        above_goal[2] += 0.05
 
-    def get_position(self):
-        print("Retrieving cartesian positions.")
-        return np.random.rand(6)
+        print('Moving to above goal position')
+        self.ur.movej(above_goal, self.acceleration, self.velocity, wait=True)
+        
+        print('Moving to goal position')
+        self.ur.movej(place_goal, self.acceleration, self.velocity, wait=True)
+        
+        print('Opennig gripper')
+        self.gripper.move_and_wait_for_pos(self.griper_open, self.gripper_speed, self.gripper_force)        
+
+        print('Moving back to above goal position')
+        self.ur.movej(above_goal, self.acceleration, self.velocity, wait=True)
+
+        print('Moving to home position')
+        self.ur.movej(self.home_joint, self.acceleration, self.velocity, wait=True)    
+    
+    # gripper functions     
+    def activate_gripper(self):
+        """
+        activate Hand-E gripper
+        """
+        try:
+            # GRIPPER SETUP:
+            self.gripper = robotiq_gripper.RobotiqGripper()
+            print('Connecting to gripper...')
+            self.gripper.connect(self.robot_ip, self.port)
+    
+        except Exception as err:
+            print("Gripper error: ", err)
+    
+        else:
+            if self.gripper.is_active():
+                print('Gripper already active')
+            else:
+                print('Activating gripper...')
+                self.gripper.activate()
+                print('Opening gripper...')
+                self.gripper.move_and_wait_for_pos(self.gripper_open, self.gripper_speed, self.gripper_force)
+                
+    def gripper_act_status(self):
+        self.gripper.is_active
+    
+    def disconnect_gripper(self):
+        """
+        disconnect Hand-E gripper
+        """
+        self.gripper.disconnect
+        
+    def gripper_cls_position(self):
+        self.gripper.get_closed_position
+        
+    def gripper_opn_position(self):
+        self.gripper.get_open_position
+        
+    def gripper_cal(self):
+        self.gripper.auto_calibrate
+        
+    def gripper_cur_position(self):
+        self.gripper.get_current_position
+        
+    def gripper_move(self, position:int, speed:int, force:int):
+        self.gripper.move_and_wait_for_pos(position, speed, force)
+        
+        
+        
+    
+        
