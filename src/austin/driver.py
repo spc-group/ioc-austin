@@ -14,10 +14,10 @@ import austin.robotiq_gripper as robotiq_gripper
 log = logging.getLogger(__name__)
 
 # Input for parameters
-homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37]  # unit: degree
+
+homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37] # unit: degree
 
 
-#
 class RobotDisconnected(ConnectionError):
     ...
 
@@ -45,7 +45,7 @@ class RobotDriver:
     def connect(self):
         try:
             self.ur = self.sock.connect((self.robot_ip, self.port))
-        except Exception as exp:
+        except Exception:
             msg = f"Could not connect to robot: {self.robot_ip}"
             log.error(msg)
             self.is_connected = False
@@ -87,8 +87,8 @@ class RobotDriver:
             elif part == b"\n":
                 break
         return collected.decode("utf-8")
-
-    # gripper functions
+    
+    # gripper functions     
     def activate_gripper(self):
         """
         activate Hand-E gripper
@@ -96,64 +96,63 @@ class RobotDriver:
         try:
             # GRIPPER SETUP:
             self.gripper = robotiq_gripper.RobotiqGripper()
-            print("Connecting to gripper...")
+            print('Connecting to gripper...')
             self.gripper.connect(self.robot_ip, self.port)
-
+    
         except Exception as err:
             print("Gripper error: ", err)
-
+    
         else:
             if self.gripper.is_active():
-                print("Gripper already active")
+                print('Gripper already active')
             else:
-                print("Activating gripper...")
+                print('Activating gripper...')
                 self.gripper.activate()
-                print("Opening gripper...")
-                self.gripper.move_and_wait_for_pos(
-                    self.gripper_pos_opn, self.gripper_vel, self.gripper_frc
-                )
-
+                print('Opening gripper...')
+                self.gripper.move_and_wait_for_pos(self.gripper_pos_opn, self.gripper_vel, self.gripper_frc)
+                
     def gripper_act_status(self):
         """
-        check gripper being actived or not
+        check gripper being actived or not 
         """
         return self.gripper.is_active()
-
+    
     def disconnect_gripper(self):
         """
         disconnect Hand-E gripper
         """
         return self.gripper.disconnect()
-
+        
     def gripper_cls_position(self):
         """
         gripper minimum position
         """
         return self.gripper.get_closed_position()
-
+        
     def gripper_opn_position(self):
         """
         gripper maximum position
         """
         return self.gripper.get_open_position()
-
+        
     def gripper_cal(self):
         """
         calibrate gripper position
         """
         return self.gripper.auto_calibrate()
-
+        
     def gripper_cur_position(self):
         """
         get gripper current postion
         """
         return self.gripper.get_current_position()
-
+        
     def gripper_move(self, gripper_pos=30, gripper_vel=0.5, gripper_frc=0.2):
         """
         move gripper to a postion with speed and force in percentage
         """
         return self.gripper.move_and_wait_for_pos(gripper_pos, gripper_vel, gripper_frc)
+
 
     # transfer functions
     def get_joint_angles(self):
