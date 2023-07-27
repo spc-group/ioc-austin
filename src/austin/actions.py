@@ -78,5 +78,5 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.homej((i,j,k,l,m,n))
+        self.driver.movej((i,j,k,l,m,n))
         print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")

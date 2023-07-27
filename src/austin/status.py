@@ -51,7 +51,7 @@ class StatusGroup(PVGroup):
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
         do_mov = partial(
-            self.parent.driver.move_joints,
+            self.parent.driver.movej,
             joints=new_joints,
             acc=acceleration,
             vel=velocity,
