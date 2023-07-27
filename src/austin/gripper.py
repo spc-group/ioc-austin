@@ -33,7 +33,6 @@ POLL_TIME = 5  # Seconds
 class GripperGroup(PVGroup):
     """PVs for controller the robot's gripper hand."""
 
-
     act = pvproperty(
         name=".ACT", dtype=bool, value="Off", doc="Whether the gripper is activated"
     )
@@ -67,7 +66,7 @@ class GripperGroup(PVGroup):
     async def cls(self, instance, async_lib):
         new_value = self.driver.gripper_cls_position()
         if new_value != instance.value:
-            await instance.write(new_value) 
+            await instance.write(new_value)
         print("Checking for changes to closed calibration position.")
 
     opn = pvproperty(
@@ -81,10 +80,9 @@ class GripperGroup(PVGroup):
     @opn.scan(POLL_TIME)
     async def opn(self, instance, async_lib):
         new_value = self.driver.gripper_cls_position()
-        if  new_value != instance.value:
+        if new_value != instance.value:
             await instance.write(new_value)
         print("Checking for changes to open calibration position.")
-        
 
     cal = pvproperty(
         name=".CAL",
@@ -113,7 +111,7 @@ class GripperGroup(PVGroup):
         new_value = self.driver.gripper_cur_position()
         if new_value != instance.value:
             await instance.write(new_value)
-        print("Checking for changes to current gripper position.") 
+        print("Checking for changes to current gripper position.")
 
     val = pvproperty(
         name=".VAL", dtype=float, value=0, doc="Desired position set point"
@@ -122,7 +120,7 @@ class GripperGroup(PVGroup):
     vel = pvproperty(
         name=".VEL", dtype=float, value=0, doc="How fast the gripper should move"
     )
-    
+
     frc = pvproperty(
         name=".FRC", dtype=float, value=0, doc="How much force the gripper may apply"
     )
@@ -134,5 +132,3 @@ class GripperGroup(PVGroup):
         force = self.frc.value
         self.driver.gripper_move(position, velocity, force)
         print(f"Moving the gripper to {value}")
-        
-        

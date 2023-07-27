@@ -41,6 +41,7 @@ class AustinIOC(PVGroup):
     changing robot.
 
     """
+
     _lock = Lock()
 
     # Robot-related PVs

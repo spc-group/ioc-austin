@@ -52,7 +52,7 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.pickj((i,j,k,l,m,n))
+        self.driver.pickj((i, j, k, l, m, n))
         print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="place:")
@@ -65,7 +65,7 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.place((i,j,k,l,m,n))
+        self.driver.place((i, j, k, l, m, n))
         print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="home:")
@@ -78,5 +78,5 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.movej((i,j,k,l,m,n))
+        self.driver.movej((i, j, k, l, m, n))
         print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
