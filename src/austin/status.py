@@ -5,6 +5,9 @@ import time
 import asyncio
 from functools import partial
 from threading import Lock
+# Fixeds a bug in the urx library or dependency
+import collections
+collections.Iterable = collections.abc.Iterable
 
 from caproto import ChannelType
 from caproto.server import (
@@ -57,6 +60,7 @@ class StatusGroup(PVGroup):
             vel=velocity,
         )
         await loop.run_in_executor(None, do_mov)
+        return value
 
     async def move_position(self, instance, value):
         """Callback to move to a given set of Cartesian coordinates.
@@ -83,9 +87,10 @@ class StatusGroup(PVGroup):
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
         do_move = partial(
-            self.parent.driver.move_pos, pos=new_pos, acc=acceleration, vel=velocity
+            self.parent.driver.movel, pos=new_pos, acc=acceleration, vel=velocity
         )
         await loop.run_in_executor(None, do_move)
+        return value
 
     # Joint positions
     i = pvproperty(
@@ -214,11 +219,11 @@ class StatusGroup(PVGroup):
     # Motion parameters
     acceleration = pvproperty(
         name="acceleration",
-        value=0.0,
+        value=0.5,
         doc="Acceleration of the robot joints when starting to move.",
     )
     velocity = pvproperty(
         name="velocity",
-        value=0.0,
+        value=0.2,
         doc="Rotational velocity of the robot joints when moving.",
     )

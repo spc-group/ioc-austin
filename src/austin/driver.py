@@ -24,35 +24,35 @@ class RobotDisconnected(ConnectionError):
 
 class RobotDriver:
     robot_ip: str = ""
-    port: str = ""
+    robot_port: int = 0
+    gripper_port: int = 0
     is_connected: bool = False
+    gripper: robotiq_gripper.RobotiqGripper = None
+    gripper_pos_opn: float = 40.0
+    gripper_vel: float = 0.5
+    gripper_for: float = 0.2
+    ur = None
 
-    def __init__(self, robot_ip, port, timeout):
+    def __init__(self, robot_ip, robot_port, gripper_port, timeout):
         self.robot_ip = robot_ip
-        self.port = port
-        # Create the socket object
+        self.robot_port = robot_port
+        self.gripper_port = gripper_port
+        # Create the robot's socket object
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(timeout)
+        # Prepare the gripper connection
+        self.gripper = robotiq_gripper.RobotiqGripper()
         self.connect()
 
-        self.ur = None
-
-        self.gripper = None
-        self.gripper_pos_opn = 40
-        self.gripper_vel = 0.5
-        self.gripper_for = 0.2
-
     def connect(self):
-        try:
-            self.ur = self.sock.connect((self.robot_ip, self.port))
-        except Exception:
-            msg = f"Could not connect to robot: {self.robot_ip}"
-            log.error(msg)
-            self.is_connected = False
-        else:
-            self.is_connected = True
-            # Receive initial "Connected" Header
-            self.sock.recv(1096)
+        self.ur = Robot(self.robot_ip)
+        # Create socket for dashboard commands
+        self.sock.connect((self.robot_ip, self.robot_port))
+        # Receive initial "Connected" Header
+        self.sock.recv(1096)
+        # Connect the gripper
+        self.gripper.connect(self.robot_ip, self.gripper_port)
+        self.is_connected = True
 
     def send_and_receive(self, command):
         try:
@@ -64,7 +64,7 @@ class RobotDriver:
             BrokenPipeError,
             TimeoutError,
         ):
-            msg = f"The connection was lost to the robot ({self.robot_ip}:{self.port})."
+            msg = f"The connection was lost to the robot ({self.robot_ip}:{self.robot_port})."
             msg += " Please connect and try running again."
             log.warning(msg)
             raise RobotDisconnected(msg)
@@ -87,29 +87,46 @@ class RobotDriver:
             elif part == b"\n":
                 break
         return collected.decode("utf-8")
+
+    # Robot position-related functions
+    def get_position(self) -> tuple:
+        """Return the robots current position in lab coordinates.
+
+        Returns
+        =======
+        pos
+          A tuple of the form (x, y, z, rx, ry, rz) for the robot's
+          current position.
+
+        """
+        pos = self.ur.getl(wait=False)
+        return pos
+
+    def get_joints(self) -> tuple:
+        """Return the robots current joint positions.
+
+        Returns
+        =======
+        joints
+          A tuple of the form (i, j, k, l, m, n) for the robot's
+          current joins.
+
+        """
+        pos = self.ur.getj(wait=False)
+        return pos
     
-    # gripper functions     
+    # Gripper functions     
     def activate_gripper(self):
         """
         activate Hand-E gripper
         """
-        try:
-            # GRIPPER SETUP:
-            self.gripper = robotiq_gripper.RobotiqGripper()
-            print('Connecting to gripper...')
-            self.gripper.connect(self.robot_ip, self.port)
-    
-        except Exception as err:
-            print("Gripper error: ", err)
-    
+        if self.gripper.is_active():
+            print('Gripper already active')
         else:
-            if self.gripper.is_active():
-                print('Gripper already active')
-            else:
-                print('Activating gripper...')
-                self.gripper.activate()
-                print('Opening gripper...')
-                self.gripper.move_and_wait_for_pos(self.gripper_pos_opn, self.gripper_vel, self.gripper_frc)
+            print('Activating gripper...')
+            self.gripper.activate()
+            print('Opening gripper...')
+            self.gripper.move_and_wait_for_pos(self.gripper_pos_opn, self.gripper_vel, self.gripper_frc)
                 
     def gripper_act_status(self):
         """
@@ -161,14 +178,18 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, home_loc=homej0, acc=0.5, vel=0.2, wait=True):
+    def movej(self, joints, acc, vel, wait=True):
         """
         Description: Moves the robot to the home location.
         """
-        print("Homing the robot...")
-        return self.ur.movej(home_loc, acc, vel, wait=True)
-        print("Robot moved to home location")
+        return self.ur.movej(joints, acc, vel, wait=True)
 
+    def movel(self, pos, acc, vel, wait=True):
+        """
+        Description: Moves the robot to the home location.
+        """
+        return self.ur.movel(pos, acc, vel, wait=True)
+        
     def pickj(
         self,
         pick_goal,

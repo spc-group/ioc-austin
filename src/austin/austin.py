@@ -59,9 +59,9 @@ class AustinIOC(PVGroup):
     # Support PVs
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
 
-    def __init__(self, robot_ip, port=29999, timeout=5, *args, **kwargs):
+    def __init__(self, robot_ip, robot_port=29999, gripper_port=63352, timeout=5, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.driver = RobotDriver(robot_ip=robot_ip, port=port, timeout=timeout)
+        self.driver = RobotDriver(robot_ip=robot_ip, robot_port=robot_port, gripper_port=gripper_port, timeout=timeout)
 
     async def __ainit__(self, async_lib):
         self.async_lib = async_lib
