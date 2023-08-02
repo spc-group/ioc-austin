@@ -41,7 +41,7 @@ be used, possibly by wrapping synchronous functions inside a thread to
 then be awaited, for example::
 
 .. code:: python
-
+    
     async def move_position(self, instance, value):
         # Equivalent to self.parent.driver.movej(value)
         await loop.run_in_executor(None, self.parent.driver.movej, value)
@@ -50,10 +50,9 @@ Using the IOC
 =============
 
 Austin **depends on the caproto-apps package** for communicating with
-an IOC Alive server. Make sure to install it first: ``pip install
-caproto-apps``.
+an IOC Alive server. Make sure to install it first: ``pip install caproto-apps``.
 
-To use, install the IOC once with
+To use this robot IOC, install the IOC once with
 
 .. code:: bash
 
@@ -68,8 +67,8 @@ Then run it with:
 Dashboard Commands
 ------------------
 
-The standard dashboard commands do things like monitor the robot mode,
-cycle power on and off, etc. These are available in the
+The standard dashboard commands do low-level things like monitor the
+robot mode, cycle power on and off, etc. These are available in the
 ``25idAustin:dashboard`` prefix. E.g. to load and then play a program:
 
 .. code:: bash
@@ -115,8 +114,9 @@ Gripper
 The robot may be fitted with a gripper for interacting with
 objects. These PVs control the gripper independently of the rest of
 the robot arm. The gripper subgroup also has its own velocity and
-force for moving the gripper. See pv-mappings.org for details on the
-PVs available for controlling the gripper.
+force for moving the gripper. See the file pv-mappings.org in this
+repository for details on the PVs available for controlling the
+gripper.
 
 Actions
 -------
@@ -125,10 +125,9 @@ Robot actions are python functions that are executed by the IOC
 (e.g. using the urx library). Each robot action on the IOC has a
 prefix, for example ``25idAustin:pick`` is the prefix for the *pick*
 action which picks up the object at a given position. Send the desired
-positions to the ``25idAustin:transfer.i`` and j..n process
-variables (PV), and set any additional arguments on the pick
-PVs. Then caput *1* to the ``25idAustin:transfer.Process`` PV, which will
-run the robot action's python function (not yet implemented). The PV
+positions to the ``25idAustin:transfer.i`` (and j..n) process
+variables (PV). Then caput *1* to the ``25idAustin:transfer.Process``
+PV, which will run the robot action's python function. The PV
 ``25idAustin:busy`` can be monitored to see when the actions is done.
 
 E.g. in one terminal:
@@ -154,14 +153,14 @@ Extending this IOC
 
 Each deployed robot will likely need to perform unique tasks, and so
 it is likely that this IOC will be extended. The best place to start
-is in ``src/austin/actions.py``. Each action here should encapsulated
-to a single function. Caproto provides the ``@pvfunction`` decorator
-to convert the function signature to PVs for the arguments, plus
-extras for processing the function, retrieving the return value, and
+is in ``src/austin/actions.py``. Each action here should encapsulate a
+single function. Caproto provides the ``@pvfunction`` decorator to
+convert the function signature to PVs for the arguments, plus extras
+for processing the function, retrieving the return value, and
 monitoring its status. As before, the function provided to
 ``@pvfunction`` must be awaitable (i.e. use the ``async`` keyword),
 and any long-running, synchronous functions called should be run in a
-separate executor.
+separate executor (still work-in-progress).
 
 caproto vs EPICS
 ================
@@ -173,9 +172,11 @@ written naively in python.
 binary**, known as an input-output controller (IOC). Once executed,
 the IOC will listen on a network port for messages using the
 channel-access protocol (CA), and respond to messages based on its
-configuration. There is nothing magic about the CA protocol, and it
-has also been implemented in other tools, most notably
-**caproto**. *caproto* is a python-native CA library.
+configuration.
 
-The IOC developed here uses caproto to listen for CA messages that
-will direct it to run python routines for manipulating the robot.
+There is nothing magic about the CA protocol, and it has also been
+implemented in other tools, most notably **caproto**. *caproto* is a
+python-native CA library. The IOC developed here uses caproto to
+listen for CA messages that will direct it to run python routines for
+manipulating the robot. The eventual goal is to migrate this IOC to
+EPICS for maintainability.
