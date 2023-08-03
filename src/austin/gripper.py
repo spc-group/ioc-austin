@@ -37,6 +37,10 @@ class GripperGroup(PVGroup):
         name=".ACT", value="Off", dtype=bool, doc="Request that the gripper activate."
     )
 
+    @act.startup
+    async def act(self, instance, async_lib):
+        self.async_lib = async_lib
+
     @act.putter
     async def act(self, instance, value):
         if value == "On":
@@ -45,7 +49,11 @@ class GripperGroup(PVGroup):
         return "Off"
 
     act_rbv = pvproperty(
-        name=".ACR", value="Off", dtype=bool, doc="Whether the gripper is activated", read_only=True,
+        name=".ACR",
+        value="Off",
+        dtype=bool,
+        doc="Whether the gripper is activated",
+        read_only=True,
     )
 
     @act_rbv.scan(POLL_TIME)
@@ -57,7 +65,7 @@ class GripperGroup(PVGroup):
 
     cls = pvproperty(
         name=".CLS",
-        dtype=float,
+        dtype=int,
         value=0,
         doc="Calibrated 'closed' position",
         read_only=True,
@@ -68,11 +76,10 @@ class GripperGroup(PVGroup):
         new_value = self.parent.driver.gripper_cls_position()
         if new_value != instance.value:
             await instance.write(new_value)
-        print("Checking for changes to closed calibration position.")
 
     opn = pvproperty(
         name=".OPN",
-        dtype=float,
+        dtype=int,
         value=0,
         doc="Calibrated 'open' position",
         read_only=True,
@@ -80,7 +87,7 @@ class GripperGroup(PVGroup):
 
     @opn.scan(POLL_TIME)
     async def opn(self, instance, async_lib):
-        new_value = self.parent.driver.gripper_cls_position()
+        new_value = self.parent.driver.gripper_opn_position()
         if new_value != instance.value:
             await instance.write(new_value)
         print("Checking for changes to open calibration position.")
@@ -101,7 +108,7 @@ class GripperGroup(PVGroup):
 
     rbv = pvproperty(
         name=".RBV",
-        dtype=float,
+        dtype=int,
         value=0,
         doc="Current gripper position readback value",
         read_only=True,
@@ -114,22 +121,21 @@ class GripperGroup(PVGroup):
             await instance.write(new_value)
         print("Checking for changes to current gripper position.")
 
-    val = pvproperty(
-        name=".VAL", dtype=float, value=0, doc="Desired position set point"
-    )
+    val = pvproperty(name=".VAL", dtype=int, value=0, doc="Desired position set point")
 
     vel = pvproperty(
-        name=".VEL", dtype=float, value=0, doc="How fast the gripper should move"
+        name=".VEL", dtype=int, value=127, doc="How fast the gripper should move"
     )
 
     frc = pvproperty(
-        name=".FRC", dtype=float, value=0, doc="How much force the gripper may apply"
+        name=".FRC", dtype=int, value=127, doc="How much force the gripper may apply"
     )
 
     @val.putter
     async def val(self, instance, value):
-        position = value
-        velocity = self.vel.value
-        force = self.frc.value
-        self.parent.driver.gripper_move(position, velocity, force)
-        print(f"Moving the gripper to {value}")
+        velv = self.vel.value
+        frcv = self.frc.value
+        loop = self.async_lib.library.get_running_loop()
+        await loop.run_in_executor(
+            None, self.parent.driver.gripper_move, value, velv, frcv
+        )

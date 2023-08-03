@@ -30,18 +30,6 @@ log = logging.getLogger(__name__)
 class ActionsGroup(PVGroup):
     """PVs for RPC actions that the robot can perform."""
 
-    # class DanceStyles(enum.IntEnum):
-    #     JAZZ = 0
-    #     BREAK = 1
-    #     TAP = 2
-
-    # @pvfunction(default=[0], prefix="dance:")
-    # async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:
-    #     print(f"Dancing with style: '{style}'")
-    #     await asyncio.sleep(5)
-    #     print("done dancing")
-    #     return True
-
     @pvfunction(default=[0], prefix="pick:")
     async def pick(
         self,
@@ -52,7 +40,10 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.pickj((i, j, k, l, m, n))
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        print(self.parent)
+        self.parent.parent.driver.pickj([i, j, k, l, m, n], acc, vel)
         print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="place:")
@@ -65,7 +56,9 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.place((i, j, k, l, m, n))
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        self.parent.parent.driver.placej([i, j, k, l, m, n], acc, vel)
         print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="home:")
@@ -78,5 +71,7 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        self.driver.movej((i, j, k, l, m, n))
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        self.parent.parent.driver.movej([i, j, k, l, m, n], acc, vel)
         print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")

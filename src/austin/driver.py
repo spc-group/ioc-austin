@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 # Input for parameters
 
-homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37] # unit: degree
+# homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37] # unit: degree
 
 
 class RobotDisconnected(ConnectionError):
@@ -28,9 +28,9 @@ class RobotDriver:
     gripper_port: int = 0
     is_connected: bool = False
     gripper: robotiq_gripper.RobotiqGripper = None
-    gripper_pos_opn: float = 40.0
-    gripper_vel: float = 0.5
-    gripper_for: float = 0.2
+    gripper_pos_opn: int = 120
+    gripper_vel: int = 120
+    gripper_for: int = 50
     ur = None
 
     def __init__(self, robot_ip, robot_port, gripper_port, timeout):
@@ -114,62 +114,63 @@ class RobotDriver:
         """
         pos = self.ur.getj(wait=False)
         return pos
-    
-    # Gripper functions     
+
+    # Gripper functions
     def activate_gripper(self):
         """
         activate Hand-E gripper
         """
         if self.gripper.is_active():
-            print('Gripper already active')
+            print("Gripper already active")
         else:
-            print('Activating gripper...')
+            print("Activating gripper...")
             self.gripper.activate()
-            print('Opening gripper...')
-            self.gripper.move_and_wait_for_pos(self.gripper_pos_opn, self.gripper_vel, self.gripper_frc)
-                
+            print("Opening gripper...")
+            self.gripper.move_and_wait_for_pos(
+                self.gripper_pos_opn, self.gripper_vel, self.gripper_frc
+            )
+
     def gripper_act_status(self):
         """
-        check gripper being actived or not 
+        check gripper being actived or not
         """
         return self.gripper.is_active()
-    
+
     def disconnect_gripper(self):
         """
         disconnect Hand-E gripper
         """
         return self.gripper.disconnect()
-        
+
     def gripper_cls_position(self):
         """
         gripper minimum position
         """
         return self.gripper.get_closed_position()
-        
+
     def gripper_opn_position(self):
         """
         gripper maximum position
         """
         return self.gripper.get_open_position()
-        
+
     def gripper_cal(self):
         """
         calibrate gripper position
         """
         return self.gripper.auto_calibrate()
-        
+
     def gripper_cur_position(self):
         """
         get gripper current postion
         """
         return self.gripper.get_current_position()
-        
+
     def gripper_move(self, gripper_pos=30, gripper_vel=0.5, gripper_frc=0.2):
         """
         move gripper to a postion with speed and force in percentage
         """
         return self.gripper.move_and_wait_for_pos(gripper_pos, gripper_vel, gripper_frc)
-
 
     # transfer functions
     def get_joint_angles(self):
@@ -178,28 +179,28 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, joints, acc, vel, wait=True):
+    def movej(self, joints, acc=0.1, vel=0.1, wait=True):
         """
         Description: Moves the robot to the home location.
         """
         return self.ur.movej(joints, acc, vel, wait=True)
 
-    def movel(self, pos, acc, vel, wait=True):
+    def movel(self, pos, acc=0.1, vel=0.1, wait=True):
         """
         Description: Moves the robot to the home location.
         """
         return self.ur.movel(pos, acc, vel, wait=True)
-        
+
     def pickj(
         self,
         pick_goal,
-        acc=0.5,
-        vel=0.2,
+        acc=0.1,
+        vel=0.1,
         wait=True,
-        gripper_pos_opn=40,
-        gripper_pos_cls=2,
-        gripper_vel=40,
-        gripper_frc=20,
+        gripper_pos_opn=120,
+        gripper_pos_cls=200,
+        gripper_vel=120,
+        gripper_frc=50,
     ):
         """Pick up from first goal position"""
         above_goal = deepcopy(pick_goal)
@@ -223,13 +224,13 @@ class RobotDriver:
     def placej(
         self,
         place_goal,
-        acc=0.5,
-        vel=0.2,
+        acc=0.1,
+        vel=0.1,
         wait=True,
-        gripper_pos_opn=40,
-        gripper_pos_cls=2,
-        gripper_vel=40,
-        gripper_frc=20,
+        gripper_pos_opn=120,
+        gripper_pos_cls=200,
+        gripper_vel=120,
+        gripper_frc=50,
     ):
         """Place down at second goal position"""
 
