@@ -59,7 +59,6 @@ class GripperGroup(PVGroup):
     @act_rbv.scan(POLL_TIME)
     async def act_rbv(self, instance, async_lib):
         new_value = self.parent.driver.gripper_act_status()
-        print(new_value)
         if new_value != instance.value:
             await instance.write(new_value)
 
@@ -90,7 +89,6 @@ class GripperGroup(PVGroup):
         new_value = self.parent.driver.gripper_opn_position()
         if new_value != instance.value:
             await instance.write(new_value)
-        print("Checking for changes to open calibration position.")
 
     cal = pvproperty(
         name=".CAL",
@@ -119,7 +117,6 @@ class GripperGroup(PVGroup):
         new_value = self.parent.driver.gripper_cur_position()
         if new_value != instance.value:
             await instance.write(new_value)
-        print("Checking for changes to current gripper position.")
 
     val = pvproperty(name=".VAL", dtype=int, value=0, doc="Desired position set point")
 
