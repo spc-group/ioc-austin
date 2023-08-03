@@ -233,7 +233,6 @@ class RobotDriver:
         gripper_frc=50,
     ):
         """Place down at second goal position"""
-
         above_goal = deepcopy(place_goal)
         above_goal[2] += 0.05
 

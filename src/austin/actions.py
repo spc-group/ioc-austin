@@ -42,8 +42,11 @@ class ActionsGroup(PVGroup):
     ) -> int:
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
-        print(self.parent)
-        self.parent.parent.driver.pickj([i, j, k, l, m, n], acc, vel)
+        # Execute the pick function
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.pickj, [i, j, k, l, m, n], acc, vel
+        )
         print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="place:")
@@ -58,7 +61,10 @@ class ActionsGroup(PVGroup):
     ) -> int:
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
-        self.parent.parent.driver.placej([i, j, k, l, m, n], acc, vel)
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.placej, [i, j, k, l, m, n], acc, vel
+        )
         print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
     @pvfunction(default=[0], prefix="home:")
@@ -73,5 +79,8 @@ class ActionsGroup(PVGroup):
     ) -> int:
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
-        self.parent.parent.driver.movej([i, j, k, l, m, n], acc, vel)
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.movej, [i, j, k, l, m, n], acc, vel
+        )
         print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
