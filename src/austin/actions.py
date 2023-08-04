@@ -30,8 +30,8 @@ log = logging.getLogger(__name__)
 class ActionsGroup(PVGroup):
     """PVs for RPC actions that the robot can perform."""
 
-    @pvfunction(default=[0], prefix="pick:")
-    async def pick(
+    @pvfunction(default=[0], prefix="pickj:")
+    async def pickj(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -40,6 +40,7 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
+        """Instruct the robot to pick up the sample given in joint positions."""
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
         # Execute the pick function
@@ -47,10 +48,9 @@ class ActionsGroup(PVGroup):
         loop.run_in_executor(
             None, self.parent.parent.driver.pickj, [i, j, k, l, m, n], acc, vel
         )
-        print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
-    @pvfunction(default=[0], prefix="place:")
-    async def place(
+    @pvfunction(default=[0], prefix="placej:")
+    async def placej(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -59,16 +59,16 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
+        """Instruct the robot to place its sample at the location given in joint positions."""
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
         loop = self.parent.parent.async_lib.library.get_running_loop()
         loop.run_in_executor(
             None, self.parent.parent.driver.placej, [i, j, k, l, m, n], acc, vel
         )
-        print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
 
-    @pvfunction(default=[0], prefix="home:")
-    async def home(
+    @pvfunction(default=[0], prefix="homej:")
+    async def homej(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -77,10 +77,65 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
+        """Instruct the robot to return to a home position given in joint positions."""
         acc = self.parent.parent.status.acceleration.value
         vel = self.parent.parent.status.velocity.value
         loop = self.parent.parent.async_lib.library.get_running_loop()
         loop.run_in_executor(
             None, self.parent.parent.driver.movej, [i, j, k, l, m, n], acc, vel
         )
-        print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+
+    @pvfunction(default=[0], prefix="pickl:")
+    async def pickl(
+        self,
+            x: float = 0.0,
+            y: float = 0.0,
+            z: float = 0.0,
+            rx: float = 0.0,
+            ry: float = 0.0,
+            rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to pick up the sample given in lab coordinates."""
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        # Execute the pick function
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.pickl, [x, y, z, rx, ry, rz], acc, vel
+        )
+
+    @pvfunction(default=[0], prefix="placel:")
+    async def placel(
+        self,
+            x: float = 0.0,
+            y: float = 0.0,
+            z: float = 0.0,
+            rx: float = 0.0,
+            ry: float = 0.0,
+            rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to place its sample at the location given in lab coordinates."""
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.placel, [x, y, z, rx, ry, rz], acc, vel
+        )
+
+    @pvfunction(default=[0], prefix="homel:")
+    async def homel(
+            self,
+            x: float = 0.0,
+            y: float = 0.0,
+            z: float = 0.0,
+            rx: float = 0.0,
+            ry: float = 0.0,
+            rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to return to a home position given in lab coordinates."""
+        acc = self.parent.parent.status.acceleration.value
+        vel = self.parent.parent.status.velocity.value
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop.run_in_executor(
+            None, self.parent.parent.driver.movel, [x, y, z, rx, ry, rz], acc, vel
+        )
