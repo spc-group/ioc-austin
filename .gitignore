@@ -1,4 +1,6 @@
 *DS_Store
+.loglogin
+*.swp
 
 # Emacs temporary files
 *~

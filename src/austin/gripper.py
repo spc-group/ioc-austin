@@ -27,7 +27,7 @@ from .driver import RobotDriver
 log = logging.getLogger(__name__)
 
 
-POLL_TIME = 5  # Seconds
+POLL_TIME = 2  # Seconds
 
 
 class GripperGroup(PVGroup):
@@ -79,7 +79,7 @@ class GripperGroup(PVGroup):
     opn = pvproperty(
         name=".OPN",
         dtype=int,
-        value=0,
+        value=120,
         doc="Calibrated 'open' position",
         read_only=True,
     )
@@ -121,11 +121,11 @@ class GripperGroup(PVGroup):
     val = pvproperty(name=".VAL", dtype=int, value=0, doc="Desired position set point")
 
     vel = pvproperty(
-        name=".VEL", dtype=int, value=127, doc="How fast the gripper should move"
+        name=".VEL", dtype=int, value=120, doc="How fast the gripper should move"
     )
 
     frc = pvproperty(
-        name=".FRC", dtype=int, value=127, doc="How much force the gripper may apply"
+        name=".FRC", dtype=int, value=50, doc="How much force the gripper may apply"
     )
 
     @val.putter

@@ -28,9 +28,9 @@ class RobotDriver:
     gripper_port: int = 0
     is_connected: bool = False
     gripper: robotiq_gripper.RobotiqGripper = None
-    gripper_pos_opn: int = 120
-    gripper_vel: int = 120
-    gripper_for: int = 50
+    gripper_pos_opn: int
+    gripper_vel: int
+    gripper_for: int
     ur = None
 
     def __init__(self, robot_ip, robot_port, gripper_port, timeout):
@@ -179,13 +179,13 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, joints, acc=0.1, vel=0.1, wait=True):
+    def movej(self, joints, acc, vel, wait=True):
         """
         Description: Moves the robot to the home location.
         """
         return self.ur.movej(joints, acc, vel, wait=True)
 
-    def movel(self, pos, acc=0.1, vel=0.1, wait=True):
+    def movel(self, pos, acc, vel, wait=True):
         """
         Description: Moves the robot to the home location.
         """
@@ -194,17 +194,47 @@ class RobotDriver:
     def pickj(
         self,
         pick_goal,
-        acc=0.1,
-        vel=0.1,
+        acc,
+        vel,
+        gripper_pos_opn,
+        gripper_pos_cls,
+        gripper_vel,
+        gripper_frc,
         wait=True,
-        gripper_pos_opn=120,
-        gripper_pos_cls=200,
-        gripper_vel=120,
-        gripper_frc=50,
     ):
         """Pick up from first goal position"""
         above_goal = deepcopy(pick_goal)
         above_goal[2] += 0.05
+
+        print("Moving to above goal position")
+        self.ur.movej(above_goal, acc, vel, wait=True)
+
+        print("Opening gripper")
+        self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
+
+        print("Moving to goal position")
+        self.ur.movej(pick_goal, acc, vel, wait=True)
+
+        print("Closing gripper")
+        self.gripper.move_and_wait_for_pos(gripper_pos_cls, gripper_vel, gripper_frc)
+
+        print("Moving back to above goal position")
+        self.ur.movej(above_goal, acc, vel, wait=True)
+
+    def pickl(
+        self,
+        pick_goal,
+        acc,
+        vel,
+        gripper_pos_opn,
+        gripper_pos_cls,
+        gripper_vel,
+        gripper_frc,
+        wait=True,
+    ):
+        """Pick up from first goal position"""
+        above_goal = deepcopy(pick_goal)
+        above_goal[2] += 0.001
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
@@ -224,13 +254,13 @@ class RobotDriver:
     def placej(
         self,
         place_goal,
-        acc=0.1,
-        vel=0.1,
+        acc,
+        vel,
+        gripper_pos_opn,
+        gripper_pos_cls,
+        gripper_vel,
+        gripper_frc,
         wait=True,
-        gripper_pos_opn=120,
-        gripper_pos_cls=200,
-        gripper_vel=120,
-        gripper_frc=50,
     ):
         """Place down at second goal position"""
         above_goal = deepcopy(place_goal)
@@ -247,3 +277,30 @@ class RobotDriver:
 
         print("Moving back to above goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
+
+    def placel(
+        self,
+        place_goal,
+        acc,
+        vel,
+        gripper_pos_opn,
+        gripper_pos_cls,
+        gripper_vel,
+        gripper_frc,
+        wait=True,
+    ):
+        """Place down at second goal position"""
+        above_goal = deepcopy(place_goal)
+        above_goal[2] += 0.001
+
+        print("Moving to above goal position")
+        self.ur.movel(above_goal, acc, vel, wait=True)
+
+        print("Moving to goal position")
+        self.ur.movel(place_goal, acc, vel, wait=True)
+
+        print("Opennig gripper")
+        self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
+
+        print("Moving back to above goal position")
+        self.ur.movel(above_goal, acc, vel, wait=True)
