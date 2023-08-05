@@ -30,6 +30,41 @@ log = logging.getLogger(__name__)
 class ActionsGroup(PVGroup):
     """PVs for RPC actions that the robot can perform."""
 
+    async def run_action(action, position):
+        """Run an action for a given position along with needed motion
+        parameters.
+
+        Assumes the action has a call signature like::
+
+        .. code:: python
+
+            def placel(
+                place_goal,
+                acc,
+                vel,
+                gripper_pos_opn,
+                gripper_pos_cls,
+                gripper_vel,
+                gripper_frc,
+            )
+
+        """
+        # Apply the motion parameters
+        status = self.parent.parent.status
+        gripper = self.parent.parent.gripper
+        params = {
+            "acc": status.acceleration.value,
+            "vel": status.velocity.value,
+            "gripper_pos_opn": gripper.opn.value,
+            "gripper_pos_cls": gripper.cls.value,
+            "gripper_vel": gripper.vel.value,
+            "gripper_frc": gripper.frc.value,
+        }
+        action_ = partial(action, **params)
+        # Execute the action
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        return await loop.run_in_executor(None, action_, position)
+
     @pvfunction(default=[0], prefix="pickj:")
     async def pickj(
         self,
@@ -41,20 +76,8 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to pick up the sample given in joint positions."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        # Execute the pick function
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None,
-            self.parent.parent.driver.pickj,
-            [i, j, k, l, m, n],
-            acc,
-            vel,
-            120,
-            200,
-            120,
-            50,
+        return await self.run_action(
+            self.parent.parent.driver.pickj, [i, j, k, l, m, n]
         )
 
     @pvfunction(default=[0], prefix="pickl:")
@@ -68,20 +91,8 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to pick up the sample given in Cartesian coordinates."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        # Execute the pick function
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None,
-            self.parent.parent.driver.pickl,
-            [x, y, z, rx, ry, rz],
-            acc,
-            vel,
-            120,
-            200,
-            120,
-            50,
+        return await self.run_action(
+            self.parent.parent.driver.pickl, [x, y, z, rx, ry, rz]
         )
 
     @pvfunction(default=[0], prefix="placej:")
@@ -95,19 +106,8 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to place its sample at the location given in joint positions."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None,
-            self.parent.parent.driver.placej,
-            [i, j, k, l, m, n],
-            acc,
-            vel,
-            120,
-            200,
-            120,
-            50,
+        return await self.run_action(
+            self.parent.parent.driver.placej, [i, j, k, l, m, n]
         )
 
     @pvfunction(default=[0], prefix="placel:")
@@ -121,21 +121,9 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to place its sample at the location given in Cartesian coordinates."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None,
-            self.parent.parent.driver.placel,
-            [x, y, z, rx, ry, rz],
-            acc,
-            vel,
-            120,
-            200,
-            120,
-            50,
+        return await self.run_action(
+            self.parent.parent.driver.placel, [x, y, z, rx, ry, rz]
         )
-        print(f"Running ``place()`` at {x=}, {y=}, {z=}, {rx=}, {ry=}, {rz=}")
 
     @pvfunction(default=[0], prefix="homej:")
     async def homej(
@@ -148,11 +136,8 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to return to a home position given in joint positions."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None, self.parent.parent.driver.movej, [i, j, k, l, m, n], acc, vel
+        return await self.run_action(
+            self.parent.parent.driver.homej, [i, j, k, l, m, n]
         )
 
     @pvfunction(default=[0], prefix="homel:")
@@ -166,9 +151,6 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to return to a home position given in Cartesian coordinates."""
-        acc = self.parent.parent.status.acceleration.value
-        vel = self.parent.parent.status.velocity.value
-        loop = self.parent.parent.async_lib.library.get_running_loop()
-        loop.run_in_executor(
-            None, self.parent.parent.driver.movel, [x, y, z, rx, ry, rz], acc, vel
+        return await self.run_action(
+            self.parent.parent.driver.homel, [x, y, z, rx, ry, rz]
         )
