@@ -28,7 +28,7 @@ from caproto.server import (
 from .driver import RobotDriver
 
 
-POLL_TIME = 50
+POLL_TIME = 0.5
 
 
 class StatusGroup(PVGroup):
