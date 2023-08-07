@@ -6,6 +6,11 @@ import asyncio
 from functools import partial
 from threading import Lock
 
+# Fixeds a bug in the urx library or dependency
+import collections
+
+collections.Iterable = collections.abc.Iterable
+
 from caproto import ChannelType
 from caproto.server import (
     PVGroup,
@@ -17,12 +22,14 @@ from caproto.server import (
     PvpropertyShortRO,
     PvpropertyChar,
     SubGroup,
+    records,
 )
+from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
 
-POLL_TIME = 50
+POLL_TIME = 0.5
 
 
 class StatusGroup(PVGroup):
@@ -51,12 +58,13 @@ class StatusGroup(PVGroup):
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
         do_mov = partial(
-            self.parent.driver.move_joints,
+            self.parent.driver.movej,
             joints=new_joints,
             acc=acceleration,
             vel=velocity,
         )
         await loop.run_in_executor(None, do_mov)
+        return value
 
     async def move_position(self, instance, value):
         """Callback to move to a given set of Cartesian coordinates.
@@ -83,9 +91,10 @@ class StatusGroup(PVGroup):
         # Move to the new joint position
         loop = self.async_lib.library.get_running_loop()
         do_move = partial(
-            self.parent.driver.move_pos, pos=new_pos, acc=acceleration, vel=velocity
+            self.parent.driver.movel, pos=new_pos, acc=acceleration, vel=velocity
         )
         await loop.run_in_executor(None, do_move)
+        return value
 
     # Joint positions
     i = pvproperty(
@@ -93,55 +102,79 @@ class StatusGroup(PVGroup):
         value=0.0,
         doc="Position of the first joint",
         put=move_joint,
+        precision=3,
     )
     j = pvproperty(
         name="j",
         value=0.0,
         doc="Position of the second joint",
         put=move_joint,
+        precision=3,
     )
     k = pvproperty(
         name="k",
         value=0.0,
         doc="Position of the third joint",
         put=move_joint,
+        precision=3,
     )
     l = pvproperty(
         name="l",
         value=0.0,
         doc="Position of the fourth joint",
         put=move_joint,
+        precision=3,
     )
     m = pvproperty(
         name="m",
         value=0.0,
         doc="Position of the fifth joint",
         put=move_joint,
+        precision=3,
     )
     n = pvproperty(
         name="n",
         value=0.0,
         doc="Position of the sixth joint",
         put=move_joint,
+        precision=3,
     )
     # Joint position read-back-values
     i_rbv = pvproperty(
-        name="i.RBV", value=0.0, doc="Read-back Position of the 1st joint"
+        name="i.RBV",
+        value=0.0,
+        doc="Read-back Position of the 1st joint",
+        precision=3,
     )
     j_rbv = pvproperty(
-        name="j.RBV", value=0.0, doc="Read-back Position of the 2nd joint"
+        name="j.RBV",
+        value=0.0,
+        doc="Read-back Position of the 2nd joint",
+        precision=3,
     )
     k_rbv = pvproperty(
-        name="k.RBV", value=0.0, doc="Read-back Position of the 3rd joint"
+        name="k.RBV",
+        value=0.0,
+        doc="Read-back Position of the 3rd joint",
+        precision=3,
     )
     l_rbv = pvproperty(
-        name="l.RBV", value=0.0, doc="Read-back Position of the 4th joint"
+        name="l.RBV",
+        value=0.0,
+        doc="Read-back Position of the 4th joint",
+        precision=3,
     )
     m_rbv = pvproperty(
-        name="m.RBV", value=0.0, doc="Read-back Position of the 5th joint"
+        name="m.RBV",
+        value=0.0,
+        doc="Read-back Position of the 5th joint",
+        precision=3,
     )
     n_rbv = pvproperty(
-        name="n.RBV", value=0.0, doc="Read-back Position of the 6th joint"
+        name="n.RBV",
+        value=0.0,
+        doc="Read-back Position of the 6th joint",
+        precision=3,
     )
 
     @i_rbv.scan(POLL_TIME)
@@ -161,36 +194,84 @@ class StatusGroup(PVGroup):
         self.async_lib = async_lib
 
     # Cartesian positions
-    x = pvproperty(name="x", value=0.0, doc="Cartesian position x", put=move_position)
-    y = pvproperty(name="y", value=0.0, doc="Cartesian position y", put=move_position)
-    z = pvproperty(name="z", value=0.0, doc="Cartesian position z", put=move_position)
+    x = pvproperty(
+        name="x",
+        value=0.0,
+        doc="Cartesian position x",
+        put=move_position,
+        precision=3,
+    )
+    y = pvproperty(
+        name="y",
+        value=0.0,
+        doc="Cartesian position y",
+        put=move_position,
+        precision=3,
+    )
+    z = pvproperty(
+        name="z",
+        value=0.0,
+        doc="Cartesian position z",
+        put=move_position,
+        precision=3,
+    )
     rx = pvproperty(
-        name="rx", value=0.0, doc="Rotation around the x-axis", put=move_position
+        name="rx",
+        value=0.0,
+        doc="Rotation around the x-axis",
+        put=move_position,
+        precision=3,
     )
     ry = pvproperty(
-        name="ry", value=0.0, doc="Rotation around the y-axis", put=move_position
+        name="ry",
+        value=0.0,
+        doc="Rotation around the y-axis",
+        put=move_position,
+        precision=3,
     )
     rz = pvproperty(
-        name="rz", value=0.0, doc="Rotation around the z-axis", put=move_position
+        name="rz",
+        value=0.0,
+        doc="Rotation around the z-axis",
+        put=move_position,
+        precision=3,
     )
     # Cartesian read-back values
     x_rbv = pvproperty(
-        name="x.RBV", value=0.0, doc="Read-back position of the x coordinate"
+        name="x.RBV",
+        value=0.0,
+        doc="Read-back position of the x coordinate",
+        precision=3,
     )
     y_rbv = pvproperty(
-        name="y.RBV", value=0.0, doc="Read-back position of the y coordinate"
+        name="y.RBV",
+        value=0.0,
+        doc="Read-back position of the y coordinate",
+        precision=3,
     )
     z_rbv = pvproperty(
-        name="z.RBV", value=0.0, doc="Read-back position of the z coordinate"
+        name="z.RBV",
+        value=0.0,
+        doc="Read-back position of the z coordinate",
+        precision=3,
     )
     rx_rbv = pvproperty(
-        name="rx.RBV", value=0.0, doc="Read-back rotation of the x coordinate"
+        name="rx.RBV",
+        value=0.0,
+        doc="Read-back rotation of the x coordinate",
+        precision=3,
     )
     ry_rbv = pvproperty(
-        name="ry.RBV", value=0.0, doc="Read-back rotation of the y coordinate"
+        name="ry.RBV",
+        value=0.0,
+        doc="Read-back rotation of the y coordinate",
+        precision=3,
     )
     rz_rbv = pvproperty(
-        name="rz.RBV", value=0.0, doc="Read-back rotation of the z coordinate"
+        name="rz.RBV",
+        value=0.0,
+        doc="Read-back rotation of the z coordinate",
+        precision=3,
     )
 
     @x_rbv.scan(POLL_TIME)
@@ -212,13 +293,17 @@ class StatusGroup(PVGroup):
             await pv.write(val)
 
     # Motion parameters
-    acceleration = pvproperty(
+    acceleration = autosaved(pvproperty(
         name="acceleration",
-        value=0.0,
+        value=0.5,
         doc="Acceleration of the robot joints when starting to move.",
-    )
-    velocity = pvproperty(
+        precision=2,
+        record=records.AiFields,
+    ))
+    velocity = autosaved(pvproperty(
         name="velocity",
-        value=0.0,
+        value=0.2,
         doc="Rotational velocity of the robot joints when moving.",
-    )
+        precision=2,
+        record=records.AiFields,
+    ))

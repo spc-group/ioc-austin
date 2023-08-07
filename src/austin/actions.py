@@ -21,6 +21,7 @@ from caproto.server import (
     SubGroup,
     pvfunction,
 )
+from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
@@ -30,20 +31,44 @@ log = logging.getLogger(__name__)
 class ActionsGroup(PVGroup):
     """PVs for RPC actions that the robot can perform."""
 
-    # class DanceStyles(enum.IntEnum):
-    #     JAZZ = 0
-    #     BREAK = 1
-    #     TAP = 2
+    async def run_action(action, position):
+        """Run an action for a given position along with needed motion
+        parameters.
 
-    # @pvfunction(default=[0], prefix="dance:")
-    # async def dance(self, style: ChannelType.STRING = ["jazz"]) -> bool:
-    #     print(f"Dancing with style: '{style}'")
-    #     await asyncio.sleep(5)
-    #     print("done dancing")
-    #     return True
+        Assumes the action has a call signature like::
 
-    @pvfunction(default=[0], prefix="pick:")
-    async def pick(
+        .. code:: python
+
+            def placel(
+                place_goal,
+                acc,
+                vel,
+                gripper_pos_opn,
+                gripper_pos_cls,
+                gripper_vel,
+                gripper_frc,
+            )
+
+        """
+        # Apply the motion parameters
+        status = self.parent.parent.status
+        gripper = self.parent.parent.gripper
+        params = {
+            "acc": status.acceleration.value,
+            "vel": status.velocity.value,
+            "gripper_pos_opn": gripper.opn.value,
+            "gripper_pos_cls": gripper.cls.value,
+            "gripper_vel": gripper.vel.value,
+            "gripper_frc": gripper.frc.value,
+        }
+        action_ = partial(action, **params)
+        # Execute the action
+        loop = self.parent.parent.async_lib.library.get_running_loop()
+        return await loop.run_in_executor(None, action_, position)
+
+    @autosaved
+    @pvfunction(default=[0], prefix="pickj:")
+    async def pickj(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -52,10 +77,28 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        print(f"Running ``pick()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+        """Instruct the robot to pick up the sample given in joint positions."""
+        return await self.run_action(
+            self.parent.parent.driver.pickj, [i, j, k, l, m, n]
+        )
 
-    @pvfunction(default=[0], prefix="place:")
-    async def place(
+    @pvfunction(default=[0], prefix="pickl:")
+    async def pickl(
+        self,
+        x: float = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
+        rx: float = 0.0,
+        ry: float = 0.0,
+        rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to pick up the sample given in Cartesian coordinates."""
+        return await self.run_action(
+            self.parent.parent.driver.pickl, [x, y, z, rx, ry, rz]
+        )
+
+    @pvfunction(default=[0], prefix="placej:")
+    async def placej(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -64,10 +107,28 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        print(f"Running ``place()`` at {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+        """Instruct the robot to place its sample at the location given in joint positions."""
+        return await self.run_action(
+            self.parent.parent.driver.placej, [i, j, k, l, m, n]
+        )
 
-    @pvfunction(default=[0], prefix="home:")
-    async def home(
+    @pvfunction(default=[0], prefix="placel:")
+    async def placel(
+        self,
+        x: float = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
+        rx: float = 0.0,
+        ry: float = 0.0,
+        rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to place its sample at the location given in Cartesian coordinates."""
+        return await self.run_action(
+            self.parent.parent.driver.placel, [x, y, z, rx, ry, rz]
+        )
+
+    @pvfunction(default=[0], prefix="homej:")
+    async def homej(
         self,
         i: float = 0.0,
         j: float = 0.0,
@@ -76,4 +137,22 @@ class ActionsGroup(PVGroup):
         m: float = 0.0,
         n: float = 0.0,
     ) -> int:
-        print(f"Running ``home()`` to {i=}, {j=}, {k=}, {l=}, {m=}, {n=}")
+        """Instruct the robot to return to a home position given in joint positions."""
+        return await self.run_action(
+            self.parent.parent.driver.homej, [i, j, k, l, m, n]
+        )
+
+    @pvfunction(default=[0], prefix="homel:")
+    async def homel(
+        self,
+        x: float = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
+        rx: float = 0.0,
+        ry: float = 0.0,
+        rz: float = 0.0,
+    ) -> int:
+        """Instruct the robot to return to a home position given in Cartesian coordinates."""
+        return await self.run_action(
+            self.parent.parent.driver.homel, [x, y, z, rx, ry, rz]
+        )

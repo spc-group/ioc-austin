@@ -404,10 +404,7 @@ class DashboardGroup(PVGroup):
 
     # PVs for change/reading the power state
     power = pvproperty(
-        name=":power",
-        dtype=bool,
-        value=False,
-        doc="Powers the robot arm on and off."
+        name=":power", dtype=bool, value=False, doc="Powers the robot arm on and off."
     )
 
     @power.putter

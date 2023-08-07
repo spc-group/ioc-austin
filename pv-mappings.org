@@ -75,7 +75,8 @@
 
   | PV Suffix | dtype | Read-only | Putter | Scan | Desc                                    |
   |-----------+-------+-----------+--------+------+-----------------------------------------|
-  | .ACT      | bool  |           | Y      | Y    | Whether the gripper is activate         |
+  | .ACT      | bool  |           | Y      |      | Request to activate the gripper         |
+  | .ACR      | enum  | Y         |        | Y    | Whether the gripper is activate         |
   | .CLS      | float | Y         |        | Y    | Calibrated "closed" position            |
   | .OPN      | float | Y         |        | Y    | Calibrated "open" position              |
   | .CAL      | bool  |           | Y      |      | Calibrate the robot's open/closed range |
