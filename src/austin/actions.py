@@ -21,6 +21,7 @@ from caproto.server import (
     SubGroup,
     pvfunction,
 )
+from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
@@ -65,6 +66,7 @@ class ActionsGroup(PVGroup):
         loop = self.parent.parent.async_lib.library.get_running_loop()
         return await loop.run_in_executor(None, action_, position)
 
+    @autosaved
     @pvfunction(default=[0], prefix="pickj:")
     async def pickj(
         self,

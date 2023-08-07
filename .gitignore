@@ -1,3 +1,6 @@
+**/autosave.json
+**/autosave_*.json
+
 *DS_Store
 .loglogin
 *.swp

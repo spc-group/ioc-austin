@@ -24,6 +24,7 @@ from caproto.server import (
     SubGroup,
     records,
 )
+from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
@@ -292,17 +293,17 @@ class StatusGroup(PVGroup):
             await pv.write(val)
 
     # Motion parameters
-    acceleration = pvproperty(
+    acceleration = autosaved(pvproperty(
         name="acceleration",
         value=0.5,
         doc="Acceleration of the robot joints when starting to move.",
         precision=2,
         record=records.AiFields,
-    )
-    velocity = pvproperty(
+    ))
+    velocity = autosaved(pvproperty(
         name="velocity",
         value=0.2,
         doc="Rotational velocity of the robot joints when moving.",
         precision=2,
         record=records.AiFields,
-    )
+    ))

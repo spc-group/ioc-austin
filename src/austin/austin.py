@@ -18,6 +18,7 @@ from caproto.server import (
     PvpropertyChar,
     SubGroup,
     pvfunction,
+    autosave,
 )
 from caprotoapps import AliveGroup
 
@@ -55,6 +56,7 @@ class AustinIOC(PVGroup):
         doc="Whether the global run lock is being held.",
         read_only=True,
     )
+    autosave = SubGroup(autosave.AutosaveHelper)
 
     # Support PVs
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
