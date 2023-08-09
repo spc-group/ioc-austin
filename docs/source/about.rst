@@ -1,8 +1,8 @@
-===========
- IOC Austin
-===========
+=====
+About
+=====
 
-A channel-access IOC for the Austin Universal Robot at sector 25,
+IOC Austin is a channel-access IOC for the Austin Universal Robot at sector 25,
 written in caproto (not EPICS).
 
 This robot IOC is composed of 4 sections:
