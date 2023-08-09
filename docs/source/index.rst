@@ -6,3 +6,4 @@ Content
 
    about
    usage
+   api

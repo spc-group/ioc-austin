@@ -307,38 +307,9 @@ texinfo_documents = [
 # -- Options for Texinfo output -------------------------------------------
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_mock_imports
 
-# autodoc_mock_imports = [
-#     'argparse',
-#     'builtins',
-#     'copy',
-#     'collections',
-#     'configparser',
-#     'contextlib',
-#     'cv2',
-#     'cupy',
-#     'cupyx',
-#     'h5py',
-#     'inspect',
-#     'logging',
-#     'numexpr',
-#     'numpy',
-#     'os',
-#     'pathlib',
-#     'pywt',
-#     'queue',
-#     'signal',
-#     'shutil',
-#     'sys',
-#     'threading',
-#     'traceback',
-#     'warnings',
-#     'tifffile',
-#     'tomocupy.cfunc_fourierrec',
-#     'tomocupy.cfunc_fourierrecfp16',
-#     'tomocupy.cfunc_lprec',
-#     'tomocupy.cfunc_lprecfp16',
-#     'tomocupy.cfunc_filter',
-#     'tomocupy.cfunc_filterfp16',    
-#     'tomocupy.cfunc_linerec',    
-#     'tomocupy.cfunc_linerecfp16',]
+autodoc_mock_imports = [
+    'caproto',
+    'numpy',
+    'urx',
+]
 
