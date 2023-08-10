@@ -152,34 +152,35 @@ class RobotiqGripper:
         time.sleep(0.5)
 
     def activate(self, auto_calibrate: bool = True):
-        """Resets the activation flag in the gripper, and sets it back to one, clearing previous fault flags.
-        :param auto_calibrate: Whether to calibrate the minimum and maximum positions based on actual motion.
-        The following code is executed in the corresponding script function
-        def rq_activate(gripper_socket="1"):
-            if (not rq_is_gripper_activated(gripper_socket)):
-                rq_reset(gripper_socket)
+        # fdc I commented out this doc string becasue is not correctly formatted for readthedocs
+        # """Resets the activation flag in the gripper, and sets it back to one, clearing previous fault flags.
+        # :param auto_calibrate: Whether to calibrate the minimum and maximum positions based on actual motion.
+        # The following code is executed in the corresponding script function
+        # def rq_activate(gripper_socket="1"):
+        #     if (not rq_is_gripper_activated(gripper_socket)):
+        #         rq_reset(gripper_socket)
 
-                while(not rq_get_var("ACT", 1, gripper_socket) == 0 or not rq_get_var("STA", 1, gripper_socket) == 0):
-                    rq_reset(gripper_socket)
-                    sync()
-                end
+        #         while(not rq_get_var("ACT", 1, gripper_socket) == 0 or not rq_get_var("STA", 1, gripper_socket) == 0):
+        #             rq_reset(gripper_socket)
+        #             sync()
+        #         end
 
-                rq_set_var("ACT",1, gripper_socket)
-            end
-        end
-        def rq_activate_and_wait(gripper_socket="1"):
-            if (not rq_is_gripper_activated(gripper_socket)):
-                rq_activate(gripper_socket)
-                sleep(1.0)
+        #         rq_set_var("ACT",1, gripper_socket)
+        #     end
+        # end
+        # def rq_activate_and_wait(gripper_socket="1"):
+        #     if (not rq_is_gripper_activated(gripper_socket)):
+        #         rq_activate(gripper_socket)
+        #         sleep(1.0)
 
-                while(not rq_get_var("ACT", 1, gripper_socket) == 1 or not rq_get_var("STA", 1, gripper_socket) == 3):
-                    sleep(0.1)
-                end
+        #         while(not rq_get_var("ACT", 1, gripper_socket) == 1 or not rq_get_var("STA", 1, gripper_socket) == 3):
+        #             sleep(0.1)
+        #         end
 
-                sleep(0.5)
-            end
-        end
-        """
+        #         sleep(0.5)
+        #     end
+        # end
+        # """
         if not self.is_active():
             self._reset()
             while not self._get_var(self.ACT) == 0 or not self._get_var(self.STA) == 0:

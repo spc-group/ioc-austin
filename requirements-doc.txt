@@ -1,0 +1,6 @@
+sphinx
+sphinx-rtd-theme
+sphinxcontrib-bibtex
+nbsphinx
+pandoc
+jupyter
