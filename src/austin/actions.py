@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 class ActionsGroup(PVGroup):
     """PVs for RPC actions that the robot can perform."""
 
-    async def run_action(action, position):
+    async def run_action(self, action, position):
         """Run an action for a given position along with needed motion
         parameters.
 
@@ -51,8 +51,8 @@ class ActionsGroup(PVGroup):
 
         """
         # Apply the motion parameters
-        status = self.parent.parent.status
-        gripper = self.parent.parent.gripper
+        status = self.parent.status
+        gripper = self.parent.gripper
         params = {
             "acc": status.acceleration.value,
             "vel": status.velocity.value,
@@ -63,7 +63,7 @@ class ActionsGroup(PVGroup):
         }
         action_ = partial(action, **params)
         # Execute the action
-        loop = self.parent.parent.async_lib.library.get_running_loop()
+        loop = self.parent.async_lib.library.get_running_loop()
         return await loop.run_in_executor(None, action_, position)
 
     @autosaved
@@ -78,7 +78,7 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to pick up the sample given in joint positions."""
-        return await self.run_action(
+        return await self.parent.run_action(
             self.parent.parent.driver.pickj, [i, j, k, l, m, n]
         )
 
@@ -93,7 +93,7 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to pick up the sample given in Cartesian coordinates."""
-        return await self.run_action(
+        return await self.parent.run_action(
             self.parent.parent.driver.pickl, [x, y, z, rx, ry, rz]
         )
 
@@ -108,7 +108,7 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to place its sample at the location given in joint positions."""
-        return await self.run_action(
+        return await self.parent.run_action(
             self.parent.parent.driver.placej, [i, j, k, l, m, n]
         )
 
@@ -123,7 +123,7 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to place its sample at the location given in Cartesian coordinates."""
-        return await self.run_action(
+        return await self.parent.run_action(
             self.parent.parent.driver.placel, [x, y, z, rx, ry, rz]
         )
 
@@ -138,8 +138,8 @@ class ActionsGroup(PVGroup):
         n: float = 0.0,
     ) -> int:
         """Instruct the robot to return to a home position given in joint positions."""
-        return await self.run_action(
-            self.parent.parent.driver.homej, [i, j, k, l, m, n]
+        return await self.parent.run_action(
+            self.parent.parent.driver.movej, [i, j, k, l, m, n]
         )
 
     @pvfunction(default=[0], prefix="homel:")
@@ -153,6 +153,6 @@ class ActionsGroup(PVGroup):
         rz: float = 0.0,
     ) -> int:
         """Instruct the robot to return to a home position given in Cartesian coordinates."""
-        return await self.run_action(
-            self.parent.parent.driver.homel, [x, y, z, rx, ry, rz]
+        return await self.parent.run_action(
+            self.parent.parent.driver.movel, [x, y, z, rx, ry, rz]
         )
