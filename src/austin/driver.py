@@ -179,13 +179,13 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, joints, acc, vel, wait=True):
+    def movej(self, joints, acc, vel, wait=True, **kwargs):
         """
         Description: Moves the robot to the home location.
         """
         return self.ur.movej(joints, acc, vel, wait=True)
 
-    def movel(self, pos, acc, vel, wait=True):
+    def movel(self, pos, acc, vel, wait=True, **kwargs):
         """
         Description: Moves the robot to the home location.
         """
@@ -204,8 +204,10 @@ class RobotDriver:
     ):
         """Pick up from first goal position"""
         above_goal = deepcopy(pick_goal)
-        above_goal[2] += 0.05
-
+        above_goal[1] += 0.218
+        above_goal[2] -= 0.827
+        above_goal[3] += 0.610
+        
         print("Moving to above goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
@@ -234,7 +236,7 @@ class RobotDriver:
     ):
         """Pick up from first goal position"""
         above_goal = deepcopy(pick_goal)
-        above_goal[2] += 0.001
+        above_goal[2] += 0.1
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
@@ -264,7 +266,9 @@ class RobotDriver:
     ):
         """Place down at second goal position"""
         above_goal = deepcopy(place_goal)
-        above_goal[2] += 0.05
+        above_goal[1] += 0.070
+        above_goal[2] -= 0.614
+        above_goal[3] += 0.544
 
         print("Moving to above goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
@@ -291,7 +295,7 @@ class RobotDriver:
     ):
         """Place down at second goal position"""
         above_goal = deepcopy(place_goal)
-        above_goal[2] += 0.001
+        above_goal[2] += 0.1
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
