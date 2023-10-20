@@ -27,6 +27,7 @@ from .dashboard import DashboardGroup
 from .status import StatusGroup
 from .actions import ActionsGroup
 from .gripper import GripperGroup
+from .samples import SampleGroup
 
 log = logging.getLogger(__name__)
 
@@ -38,10 +39,33 @@ class RobotBusy(RuntimeError):
 
 
 sample_positions = [
-    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 0
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 1
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 2
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 3
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 4
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 5
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 6
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 7
+    (-.06858, 0.35933, -0.10418+0.4, 2.215, -2.230, 0.009), # 8
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 9
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 10
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 11
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 12
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 13
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 14
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 15
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 16
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 17
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 18
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 19
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 20
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 21
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 22
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0), # 23
 ]
 
-stage_position = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+stage_position = (0.19676, -0.42392, -0.22204+0.4, 2.909, 1.187, 0.003)  # Aerotech stage
 
 
 class AustinIOC(PVGroup):
@@ -67,8 +91,13 @@ class AustinIOC(PVGroup):
     # Sample loaders
     sample0 = SubGroup(
         SampleGroup, prefix="sample0",
-        pick_position=sample_positions[0],
-        place_position=stage_position,
+        sample_position=sample_positions[0],
+        stage_position=stage_position,
+    )
+    sample8 = SubGroup(
+        SampleGroup, prefix="sample8",
+        sample_position=sample_positions[8],
+        stage_position=stage_position,
     )
 
     # Support PVs

@@ -1,6 +1,5 @@
 import logging
 import time
-from copy import deepcopy
 
 import numpy as np
 
@@ -203,7 +202,7 @@ class RobotDriver:
         wait=True,
     ):
         """Pick up from first goal position"""
-        above_goal = deepcopy(pick_goal)
+        above_goal = list(pick_goal)
         above_goal[1] += 0.218
         above_goal[2] -= 0.827
         above_goal[3] += 0.610
@@ -235,7 +234,7 @@ class RobotDriver:
         wait=True,
     ):
         """Pick up from first goal position"""
-        above_goal = deepcopy(pick_goal)
+        above_goal = list(pick_goal)
         above_goal[2] += 0.1
 
         print("Moving to above goal position")
@@ -265,7 +264,7 @@ class RobotDriver:
         wait=True,
     ):
         """Place down at second goal position"""
-        above_goal = deepcopy(place_goal)
+        above_goal = list(place_goal)
         above_goal[1] += 0.070
         above_goal[2] -= 0.614
         above_goal[3] += 0.544
@@ -294,7 +293,7 @@ class RobotDriver:
         wait=True,
     ):
         """Place down at second goal position"""
-        above_goal = deepcopy(place_goal)
+        above_goal = list(place_goal)
         above_goal[2] += 0.1
 
         print("Moving to above goal position")
