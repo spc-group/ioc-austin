@@ -37,6 +37,13 @@ class RobotBusy(RuntimeError):
     ...
 
 
+sample_positions = [
+    (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+]
+
+stage_position = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+
 class AustinIOC(PVGroup):
     """An input output controller for the 25-ID-C universal robots sample
     changing robot.
@@ -56,9 +63,16 @@ class AustinIOC(PVGroup):
         doc="Whether the global run lock is being held.",
         read_only=True,
     )
-    autosave = SubGroup(autosave.AutosaveHelper)
+
+    # Sample loaders
+    sample0 = SubGroup(
+        SampleGroup, prefix="sample0",
+        pick_position=sample_positions[0],
+        place_position=stage_position,
+    )
 
     # Support PVs
+    autosave = SubGroup(autosave.AutosaveHelper)
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
 
     def __init__(
