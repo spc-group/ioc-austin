@@ -5,7 +5,7 @@ import time
 import asyncio
 from functools import partial
 from threading import Lock
-from typing import Literal
+from typing import Literal, Sequence, Tuple
 import enum
 
 from caproto import ChannelType
@@ -29,18 +29,46 @@ log = logging.getLogger(__name__)
 
 
 class SampleGroup(PVGroup):
+    """Describes a sample holder sitting on the shelf.
+
+    The robot will be able to retrieve the sample holder from its position,
+    and place it on the stage (and also vice-versa).
+
+    When going from shelf to the stage, it will go through the points
+    specified in *waypoints* in order. When going from the stage back to the shelf,
+    it will go through *waypoints* in reverse order.
+
+    Parameters
+    ----------
+    sample_position
+      Cartesian coordinates (x, y, z, rx, ry, rz) of the sample holder on the shelf.
+    stage_position
+      Cartesian coordinates (x, y, z, rx, ry, rz) of the sample holder on the translation stage.
+    waypoints
+      Cartesian coordinates (x, y, z, rx, ry, rz) sets to follow on the way from the shelf to the stage.
+
+    """
 
     sample_position: tuple[float] = (0, 0, 0, 0, 0, 0)
     stage_position: tuple[float] = (0, 0, 0, 0, 0, 0)
+    forward_path: Sequence[Tuple[float]] = []
 
-    def __init__(self, sample_position: tuple[float], stage_position: tuple[float], *args, **kwargs):
+    def __init__(
+        self,
+        sample_position: tuple[float],
+        stage_position: tuple[float],
+        waypoints: tuple[float],
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.sample_position = sample_position
         self.stage_position = stage_position
-    
+        self.waypoints = waypoints
+
     present = pvproperty(
         name=":present",
-        value=False,
+        value=True,
         doc="Whether a sample base is present in this platform position",
     )
 
@@ -54,7 +82,7 @@ class SampleGroup(PVGroup):
     @property
     def is_empty(self):
         result = self.present.value in ["Off", False, 0]
-        return result 
+        return result
 
     @load.putter
     async def load(self, instance, value):
@@ -67,20 +95,27 @@ class SampleGroup(PVGroup):
             return "Off"
         # Check that there is a sample on the platform
         from pprint import pprint
+
         pprint(dir(instance))
         print(self.is_empty)
         if self.is_empty:
             raise RuntimeError("Sample platform is empty.")
         # Pick the sample up from the platform
         await self.parent.actions.run_action(
-            self.parent.driver.pickl, self.sample_position,
+            self.parent.driver.pickl,
+            self.sample_position,
         )
-        await self.parent.actions.homel.Process.write(1)
+        # Go through each waypoint, in order, to move to the stage
+        for waypoint in self.waypoints:
+            await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Place the sample down on the stage
         await self.parent.actions.run_action(
-            self.parent.driver.placel, self.stage_position,
+            self.parent.driver.placel,
+            self.stage_position,
         )
-        await self.parent.actions.homel.Process.write(1)
+        # Go back to a safe position (really the first waypoint)
+        for waypoint in waypoints[::-1]:
+            await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Update the presence PV
         await self.present.write(0)
         return "Off"
@@ -104,16 +139,24 @@ class SampleGroup(PVGroup):
         # Check that there isn't already a sample on the platform
         if not self.is_empty:
             raise RuntimeError("Sample platform is not empty.")
+        # Go through each waypoint, in order, to move to the stage
+        for waypoint in self.waypoints:
+            await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Pick the sample up from the stage
         await self.parent.actions.run_action(
-            self.parent.driver.pickl, self.stage_position,
+            self.parent.driver.pickl,
+            self.stage_position,
         )
-        await self.parent.actions.homel.Process.write(1)
+        # Go back to the waypoint closest to the stage
+        for waypoint in waypoints[::-1]:
+            await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Move the sample back to the platform
         await self.parent.actions.run_action(
-            self.parent.driver.placel, self.sample_position,
+            self.parent.driver.placel,
+            self.sample_position,
         )
-        await self.parent.actions.homel.Process.write(1)
+        # Go back to the first waypoint position (resting position)
+        await self.parent.actions.run_action(self.parent.driver.movel, waypoints[0])
         # Update the presence PV
         await self.present.write(1)
         return "Off"

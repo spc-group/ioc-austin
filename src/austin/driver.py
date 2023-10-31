@@ -178,16 +178,45 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, joints, acc, vel, wait=True, **kwargs):
+    def movej(self, joints, acc, vel, wait=True, relative=False, **kwargs):
         """
-        Description: Moves the robot to the home location.
+        Description: Moves the robot to the requested joint pose.
         """
         return self.ur.movej(joints, acc, vel, wait=True)
 
-    def movel(self, pos, acc, vel, wait=True, **kwargs):
+    def movel(self, pos: tuple, acc: float, vel: float, wait: bool = True, **kwargs):
+        """Moves the robot to the requested location.
+
+        *pos* controls the target position for the robot. If six values are given,
+        they will be assumed to be (x, y, z, rx, ry, rz). If three values are given,
+        they will be assumed to be (x, y, z) and the current (rx, ry, rz)
+        values will be used.
+
+        Parameters
+        ----------
+        pos
+          The target position in cartesian coordinates.
+        acc
+          How fast the robot should accelerate.
+        vel
+          How fast the robot should move at full speed.
+        wait
+          Whether to block and wait for the robot to finish.
+        **kwargs
+          Ignored.
+
         """
-        Description: Moves the robot to the home location.
-        """
+        # Check if we need to grab the current orientation
+        if len(pos) == 3:
+            pos = (*pos, *self.get_position()[3:])
+        elif len(pos) not in [3, 6]:
+            raise ValueError(
+                "Position must be either (x, y, z) "
+                "or (x, y, z, rx, ry, rz). "
+                f"Received {pos}"
+            )
+        # Move the robot
+        print(f"Moving to {pos=}")
         return self.ur.movel(pos, acc, vel, wait=True)
 
     def pickj(
@@ -206,7 +235,7 @@ class RobotDriver:
         above_goal[1] += 0.218
         above_goal[2] -= 0.827
         above_goal[3] += 0.610
-        
+
         print("Moving to above goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
@@ -234,8 +263,16 @@ class RobotDriver:
         wait=True,
     ):
         """Pick up from first goal position"""
+        pick_goal = list(pick_goal)
+        pick_goal[2] += 0.235
         above_goal = list(pick_goal)
-        above_goal[2] += 0.1
+        above_goal[2] += 0.134
+        # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
+        # if pick_goal[0]**2 + pick_goal[1]**2>0.157 and y >0:
+        #    above_goal[1] += 0.0762
+        #    above_goal[3] += 0.103
+        #    above_goal[4] -= 0.104
+        #    above_goal[5] += 0.151
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
@@ -248,6 +285,9 @@ class RobotDriver:
 
         print("Closing gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_cls, gripper_vel, gripper_frc)
+
+        print("Rotating gripper by 5 deg")
+        self.ur.movej([0, 0, 0, 0, 0, 0.087], acc, vel, wait=True, relative=True)
 
         print("Moving back to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
@@ -293,8 +333,16 @@ class RobotDriver:
         wait=True,
     ):
         """Place down at second goal position"""
+        place_goal = list(place_goal)
+        place_goal[2] += 0.237
         above_goal = list(place_goal)
-        above_goal[2] += 0.1
+        above_goal[2] += 0.132
+        # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
+        # if pick_goal[0]**2 + pick_goal[1]**2>0.157 and y >0:
+        #    above_goal[1] += 0.0762
+        #    above_goal[3] += 0.103
+        #    above_goal[4] -= 0.104
+        #    above_goal[5] += 0.151
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)

@@ -121,13 +121,17 @@ class GripperGroup(PVGroup):
 
     val = pvproperty(name=".VAL", dtype=int, value=0, doc="Desired position set point")
 
-    vel = autosaved(pvproperty(
-        name=".VEL", dtype=int, value=120, doc="How fast the gripper should move"
-    ))
+    vel = autosaved(
+        pvproperty(
+            name=".VEL", dtype=int, value=120, doc="How fast the gripper should move"
+        )
+    )
 
-    frc = autosaved(pvproperty(
-        name=".FRC", dtype=int, value=50, doc="How much force the gripper may apply"
-    ))
+    frc = autosaved(
+        pvproperty(
+            name=".FRC", dtype=int, value=50, doc="How much force the gripper may apply"
+        )
+    )
 
     @val.putter
     async def val(self, instance, value):
