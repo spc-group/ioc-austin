@@ -108,6 +108,33 @@ Then in a second terminal:
     caput 25idAustin:pick.n 2
     caput 25idAustin:pick.Process 1
 
+
+Coordinate System
+-----------------
+
+
+.. image:: img/robot_01.png
+   :width: 320px
+   :align: center
+   :alt: robot
+
+The Base coordinate system is a Right-hand coordinate system, where Y is into the robot cable and Z-axis upwards through the centre of the Base joint.
+
+.. image:: img/robot_02.png
+   :width: 320px
+   :align: center
+   :alt: robot
+
+The Tool coordinate system is a Right-hand coordinate system, where Y is away from the Tool connector, and Z is normal to the tool flange.
+
+.. image:: img/robot_03.png
+   :width: 320px
+   :align: center
+   :alt: robot
+
+The Tool offsed will shift the Tool coordinate system as shown.
+
+
 .. _Extending this IOC:
 
 Extending this IOC
