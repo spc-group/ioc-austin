@@ -25,7 +25,7 @@ from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
-log = logging.getLogger(__name__)
+log = logging.getLogger(__name__
 
 
 class SampleGroup(PVGroup):
@@ -51,7 +51,7 @@ class SampleGroup(PVGroup):
 
     sample_position: tuple[float] = (0, 0, 0, 0, 0, 0)
     stage_position: tuple[float] = (0, 0, 0, 0, 0, 0)
-    forward_path: Sequence[Tuple[float]] = []
+    waypoints: Sequence[Tuple[float]] = []
 
     def __init__(
         self,
@@ -94,10 +94,6 @@ class SampleGroup(PVGroup):
         if value != "On":
             return "Off"
         # Check that there is a sample on the platform
-        from pprint import pprint
-
-        pprint(dir(instance))
-        print(self.is_empty)
         if self.is_empty:
             raise RuntimeError("Sample platform is empty.")
         # Pick the sample up from the platform
@@ -114,10 +110,9 @@ class SampleGroup(PVGroup):
             self.stage_position,
         )
         # Go back to a safe position (really the first waypoint)
-        for waypoint in waypoints[::-1]:
+        for waypoint in self.waypoints[::-1]:
             await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Update the presence PV
-        await self.present.write(0)
         return "Off"
 
     unload = pvproperty(
@@ -148,7 +143,7 @@ class SampleGroup(PVGroup):
             self.stage_position,
         )
         # Go back to the waypoint closest to the stage
-        for waypoint in waypoints[::-1]:
+        for waypoint in self.waypoints[::-1]:
             await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
         # Move the sample back to the platform
         await self.parent.actions.run_action(
@@ -156,7 +151,7 @@ class SampleGroup(PVGroup):
             self.sample_position,
         )
         # Go back to the first waypoint position (resting position)
-        await self.parent.actions.run_action(self.parent.driver.movel, waypoints[0])
+        await self.parent.actions.run_action(self.parent.driver.movel, self.waypoints[0])
         # Update the presence PV
         await self.present.write(1)
         return "Off"

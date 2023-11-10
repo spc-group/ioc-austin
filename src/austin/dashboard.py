@@ -22,7 +22,7 @@ from caproto.server import (
 
 from .driver import RobotDriver, RobotDisconnected
 
-POLL_SLOWDOWN = 60  # Should be 1 for normal operation, high for debugging
+POLL_SLOWDOWN = 1  # Should be 1 for normal operation, high for debugging
 POLL_TIME = 0.5 * POLL_SLOWDOWN
 
 

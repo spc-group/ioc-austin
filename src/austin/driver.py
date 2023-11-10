@@ -266,21 +266,25 @@ class RobotDriver:
         pick_goal = list(pick_goal)
         pick_goal[2] += 0.235
         above_goal = list(pick_goal)
-        above_goal[2] += 0.134
         # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
-        # if pick_goal[0]**2 + pick_goal[1]**2>0.157 and y >0:
-        #    above_goal[1] += 0.0762
-        #    above_goal[3] += 0.103
-        #    above_goal[4] -= 0.104
-        #    above_goal[5] += 0.151
-
+        is_board = pick_goal[1] > 0
+        outside_range = pick_goal[0]**2 + pick_goal[1]**2>0.15
+        if outside_range and is_board:
+            above_goal[1] -= 0.0762
+            above_goal[2] += 0.134
+            above_goal[3] += 0.103
+            above_goal[4] -= 0.104
+            above_goal[5] += 0.151
+        else:
+            above_goal[2] += 0.134        
+        
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
         print("Opening gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving to goal position")
+        print("Moving to pick goal position")
         self.ur.movel(pick_goal, acc, vel, wait=True)
 
         print("Closing gripper")
@@ -289,7 +293,7 @@ class RobotDriver:
         print("Rotating gripper by 5 deg")
         self.ur.movej([0, 0, 0, 0, 0, 0.087], acc, vel, wait=True, relative=True)
 
-        print("Moving back to above goal position")
+        print("Moving back to above pick goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
     def placej(
@@ -309,16 +313,16 @@ class RobotDriver:
         above_goal[2] -= 0.614
         above_goal[3] += 0.544
 
-        print("Moving to above goal position")
+        print("Moving to above place goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
-        print("Moving to goal position")
+        print("Moving to place goal position")
         self.ur.movej(place_goal, acc, vel, wait=True)
 
         print("Opennig gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving back to above goal position")
+        print("Moving back to above place goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
     def placel(
@@ -336,22 +340,26 @@ class RobotDriver:
         place_goal = list(place_goal)
         place_goal[2] += 0.237
         above_goal = list(place_goal)
-        above_goal[2] += 0.132
-        # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
-        # if pick_goal[0]**2 + pick_goal[1]**2>0.157 and y >0:
-        #    above_goal[1] += 0.0762
-        #    above_goal[3] += 0.103
-        #    above_goal[4] -= 0.104
-        #    above_goal[5] += 0.151
+        # For position 0 ~ 6, the above_goal should include 10° rotation of Wrist1
+        is_board = place_goal[1] > 0
+        outside_range = place_goal[0]**2 + place_goal[1]**2>0.15
+        if outside_range and is_board:
+            above_goal[1] -= 0.0762
+            above_goal[2] += 0.132
+            above_goal[3] += 0.103
+            above_goal[4] -= 0.104
+            above_goal[5] += 0.151
+        else:
+            above_goal[2] += 0.132
 
-        print("Moving to above goal position")
+        print("Moving to above place goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
-        print("Moving to goal position")
+        print("Moving to place goal position")
         self.ur.movel(place_goal, acc, vel, wait=True)
 
         print("Opennig gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving back to above goal position")
+        print("Moving back to above place goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)

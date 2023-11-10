@@ -70,8 +70,8 @@ for n in range(24):
 
 # A trajectory that the robot can follow to safely navigate from the shelf to the stage
 shelf_to_stage_path = [
-    [-0.04074, -0.40701, 0.31061],
-    [-0.26948, 0.10508, 0.41812],
+	[-0.26948, 0.10508, 0.41812],
+    [-0.04074, -0.40701, 0.31061],   
 ]
 
 

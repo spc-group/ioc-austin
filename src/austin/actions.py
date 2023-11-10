@@ -147,12 +147,12 @@ class ActionsGroup(PVGroup):
     @pvfunction(default=[0], prefix="homel:")
     async def homel(
         self,
-        x: float = -0.363,
-        y: float = -0.118,
+        x: float = -0.269,
+        y: float = 0.105,
         z: float = 0.418,
-        rx: float = -2.243,
-        ry: float = 2.199,
-        rz: float = -0.009,
+        rx: float = 2.141,
+        ry: float = -2.096,
+        rz: float = -0.160,
     ) -> int:
         """Instruct the robot to return to a home position given in Cartesian coordinates."""
         return await self.parent.run_action(
