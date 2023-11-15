@@ -199,6 +199,8 @@ class StatusGroup(PVGroup):
         value=0.0,
         doc="Cartesian position x",
         put=move_position,
+        record="motor",
+        units="m",
         precision=3,
     )
     y = pvproperty(
@@ -237,12 +239,12 @@ class StatusGroup(PVGroup):
         precision=3,
     )
     # Cartesian read-back values
-    x_rbv = pvproperty(
-        name="x.RBV",
-        value=0.0,
-        doc="Read-back position of the x coordinate",
-        precision=3,
-    )
+    # x_rbv = pvproperty(
+    #     name="x.RBV",
+    #     value=0.0,
+    #     doc="Read-back position of the x coordinate",
+    #     precision=3,
+    # )
     y_rbv = pvproperty(
         name="y.RBV",
         value=0.0,
@@ -274,15 +276,15 @@ class StatusGroup(PVGroup):
         precision=3,
     )
 
-    @x_rbv.scan(POLL_TIME)
-    async def x_rbv(self, instance, async_lib):
+    @x.scan(POLL_TIME)
+    async def x(self, instance, async_lib):
         """Ask the driver for current Cartesian position and update the PVs."""
         loop = self.async_lib.library.get_running_loop()
         # Get current position
         new_pos = await loop.run_in_executor(None, self.parent.driver.get_position)
         # Update PVs with new joint positions
         pvs = [
-            self.x_rbv,
+            self.x.fields["RBV"],
             self.y_rbv,
             self.z_rbv,
             self.rx_rbv,
