@@ -199,7 +199,7 @@ class StatusGroup(PVGroup):
         value=0.0,
         doc="Cartesian position x",
         put=move_position,
-        record="motor",
+        # record="motor",
         units="m",
         precision=3,
     )
@@ -239,12 +239,12 @@ class StatusGroup(PVGroup):
         precision=3,
     )
     # Cartesian read-back values
-    # x_rbv = pvproperty(
-    #     name="x.RBV",
-    #     value=0.0,
-    #     doc="Read-back position of the x coordinate",
-    #     precision=3,
-    # )
+    x_rbv = pvproperty(
+        name="x.RBV",
+        value=0.0,
+        doc="Read-back position of the x coordinate",
+        precision=3,
+    )
     y_rbv = pvproperty(
         name="y.RBV",
         value=0.0,
@@ -284,7 +284,8 @@ class StatusGroup(PVGroup):
         new_pos = await loop.run_in_executor(None, self.parent.driver.get_position)
         # Update PVs with new joint positions
         pvs = [
-            self.x.fields["RBV"],
+            # self.x.fields["RBV"],
+            self.x_rbv,
             self.y_rbv,
             self.z_rbv,
             self.rx_rbv,

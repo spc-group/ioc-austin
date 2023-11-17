@@ -145,6 +145,8 @@ class SampleGroup(PVGroup):
         # Check that there is a sample on the platform
         if self.is_empty:
             raise RuntimeError("Sample platform is empty.")
+        # Check if we need to unload an existing sample first
+        await self.parent.unload_current_sample.write("On")
         # Pick the sample up from the platform
         await self.actions.run_action(
             self.driver.pickl,
@@ -252,6 +254,21 @@ class SamplesGroup(PVGroup):
     """Covers all the sample positions, and keeps track of which sample is loaded."""
 
     current_sample = pvproperty(name="current_sample", value="None", dtype=str, record="stringin")
+    unload_current_sample = pvproperty(name="unload_current_sample", value=False, dtype=bool)
+
+    @unload_current_sample.putter
+    async def unload_current_sample(self, instance, value):
+        """Remove the current sample from the stage, if one is present."""
+        # Check that the value given should start the robot
+        if value != "On":
+            return "Off"
+        # Ask the current sample to remove itself from the stage
+        current_sample = self.current_sample.value
+        if current_sample is "None":
+            log.info("Current sample is `None`, ignoring unload request.")
+        else:
+            await getattr(self, f"sample{current_sample}").unload.write("On")
+        return "Off"
 
     sample0 = SubGroup(
         SampleGroup,
