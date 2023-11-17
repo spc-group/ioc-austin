@@ -184,7 +184,7 @@ class RobotDriver:
         """
         return self.ur.movej(joints, acc, vel, wait=True)
 
-    def movel(self, pos: tuple, acc: float, vel: float, wait: bool = True, **kwargs):
+    def movel(self, pos: tuple, acc: float, vel: float, wait: bool = True, relative=False, **kwargs):
         """Moves the robot to the requested location.
 
         *pos* controls the target position for the robot. If six values are given,
@@ -202,6 +202,8 @@ class RobotDriver:
           How fast the robot should move at full speed.
         wait
           Whether to block and wait for the robot to finish.
+        relative
+          If true, move by relative amounts for each axis.
         **kwargs
           Ignored.
 
@@ -216,8 +218,8 @@ class RobotDriver:
                 f"Received {pos}"
             )
         # Move the robot
-        print(f"Moving to {pos=}")
-        return self.ur.movel(pos, acc, vel, wait=True)
+        print(f"Moving to {pos=} ({relative=})")
+        return self.ur.movel(pos, acc, vel, wait=True, relative=relative)
 
     def pickj(
         self,

@@ -11,7 +11,7 @@ import collections
 
 collections.Iterable = collections.abc.Iterable
 
-from caproto import ChannelType
+from caproto import ChannelType, ChannelDouble
 from caproto.server import (
     PVGroup,
     ioc_arg_parser,
@@ -24,12 +24,87 @@ from caproto.server import (
     SubGroup,
     records,
 )
+from caproto.server.records import MotorFields
 from caproto.server.autosave import autosaved
 
 from .driver import RobotDriver
 
 
+log = logging.getLogger(__name__)
+
+
 POLL_TIME = 0.5
+
+
+class RobotAxisFields(MotorFields):
+    def __init__(self, *args, axis_num: int = 99, **kwargs):
+        self.axis_num = axis_num
+        super().__init__(*args, **kwargs)
+
+    @property
+    def driver(self):
+        # Find the root of the IOC
+        obj = self
+        while True:
+            # Find the next node up the tree
+            try:
+                parent = obj.parent
+            except AttributeError:
+                parent = obj.group
+            # See if the next node up is the root
+            if parent is None:
+                # It's the root node, so quit
+                break
+            else:
+                obj = parent
+        return obj.driver
+
+    async def tweak_value(self, instance, value, direction):
+        """Tweak the motor value. To be used by tweak forward and reverse.
+
+        *direction* should be either 1 (forward) or -1 (reverse).
+        """
+        # Putting 0 does nothing
+        if not bool(value):
+            return 0
+        # Figure out where to move to
+        step = direction * instance.group.tweak_step_size.value
+        axis_num = self.parent.axis_num
+        # Do the actual moving
+        log.info(f"Tweaking axis {axis_num} value by {step}.")
+        new_pos = tuple((step if n == axis_num else 0) for n in range(6))
+        loop = self.async_lib.library.get_running_loop()
+        do_mov = partial(
+            self.driver.movel,
+            pos=new_pos,
+            vel=0.5,
+            acc=0.5,
+            relative=True,
+        )
+        await loop.run_in_executor(None, do_mov)
+
+    @MotorFields.tweak_motor_forward.putter
+    async def tweak_motor_forward(self, instance, value):
+        await self.tweak_value(instance, value, direction=1)
+        return 0
+
+    @MotorFields.tweak_motor_reverse.putter
+    async def tweak_motor_reverse(self, instance, value):
+        await self.tweak_value(instance, value, direction=-1)
+        return 0
+
+    @MotorFields.description.startup
+    async def description(self, instance, async_lib):
+        # Save the async lib for later use
+        self.async_lib = async_lib
+        # Set the fields to the PV spec properties
+        await instance.write(self.parent.__doc__)
+
+
+class RobotAxisPosition(PvpropertyDouble):
+    def __init__(self, *args, axis_num: int = 99, **kwargs):
+        self.axis_num = axis_num
+        super().__init__(*args, **kwargs)
 
 
 class StatusGroup(PVGroup):
@@ -197,82 +272,67 @@ class StatusGroup(PVGroup):
     x = pvproperty(
         name="x",
         value=0.0,
-        doc="Cartesian position x",
+        doc="Cartesian x",
         put=move_position,
-        # record="motor",
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=0,
         units="m",
         precision=3,
     )
     y = pvproperty(
         name="y",
         value=0.0,
-        doc="Cartesian position y",
+        doc="Cartesian y",
         put=move_position,
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=1,
+        units="m",
         precision=3,
     )
     z = pvproperty(
         name="z",
         value=0.0,
-        doc="Cartesian position z",
+        doc="Cartesian z",
         put=move_position,
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=2,
+        units="m",
         precision=3,
     )
     rx = pvproperty(
         name="rx",
         value=0.0,
-        doc="Rotation around the x-axis",
+        doc="X-rotation",
         put=move_position,
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=3,
+        units="m",
         precision=3,
     )
     ry = pvproperty(
         name="ry",
         value=0.0,
-        doc="Rotation around the y-axis",
+        doc="Y-rotation",
         put=move_position,
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=4,
+        units="m",
         precision=3,
     )
     rz = pvproperty(
         name="rz",
         value=0.0,
-        doc="Rotation around the z-axis",
+        doc="Z-rotation",
         put=move_position,
-        precision=3,
-    )
-    # Cartesian read-back values
-    x_rbv = pvproperty(
-        name="x.RBV",
-        value=0.0,
-        doc="Read-back position of the x coordinate",
-        precision=3,
-    )
-    y_rbv = pvproperty(
-        name="y.RBV",
-        value=0.0,
-        doc="Read-back position of the y coordinate",
-        precision=3,
-    )
-    z_rbv = pvproperty(
-        name="z.RBV",
-        value=0.0,
-        doc="Read-back position of the z coordinate",
-        precision=3,
-    )
-    rx_rbv = pvproperty(
-        name="rx.RBV",
-        value=0.0,
-        doc="Read-back rotation of the x coordinate",
-        precision=3,
-    )
-    ry_rbv = pvproperty(
-        name="ry.RBV",
-        value=0.0,
-        doc="Read-back rotation of the y coordinate",
-        precision=3,
-    )
-    rz_rbv = pvproperty(
-        name="rz.RBV",
-        value=0.0,
-        doc="Read-back rotation of the z coordinate",
+        record=RobotAxisFields,
+        dtype=RobotAxisPosition,
+        axis_num=5,
+        units="m",
         precision=3,
     )
 
@@ -284,13 +344,13 @@ class StatusGroup(PVGroup):
         new_pos = await loop.run_in_executor(None, self.parent.driver.get_position)
         # Update PVs with new joint positions
         pvs = [
-            # self.x.fields["RBV"],
-            self.x_rbv,
-            self.y_rbv,
-            self.z_rbv,
-            self.rx_rbv,
-            self.ry_rbv,
-            self.rz_rbv,
+            self.x.fields["RBV"],
+            # self.x_rbv,
+            self.y.fields["RBV"],
+            self.z.fields["RBV"],
+            self.rx.fields["RBV"],
+            self.ry.fields["RBV"],
+            self.rz.fields["RBV"],
         ]
         for pv, val in zip(pvs, new_pos):
             await pv.write(val)
