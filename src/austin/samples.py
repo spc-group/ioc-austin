@@ -128,7 +128,7 @@ class SampleGroup(PVGroup):
         dio = getattr(lj_group.digital_ios, f"dio{lj_pos}")
         lj_val = dio.input.value
         # Convert from labjack values to binary values
-        if lj_val is "Low":
+        if lj_val == "Low":
             present_val = "Off"
             empty_val = "On"
         else:
