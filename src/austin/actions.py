@@ -127,6 +127,7 @@ class ActionsGroup(PVGroup):
             self.parent.parent.driver.placel, [x, y, z, rx, ry, rz]
         )
 
+    @autosaved
     @pvfunction(default=[0], prefix="homej:")
     async def homej(
         self,
@@ -142,15 +143,16 @@ class ActionsGroup(PVGroup):
             self.parent.parent.driver.movej, [i, j, k, l, m, n]
         )
 
+    @autosaved
     @pvfunction(default=[0], prefix="homel:")
     async def homel(
         self,
-        x: float = 0.0,
-        y: float = 0.0,
-        z: float = 0.0,
-        rx: float = 0.0,
-        ry: float = 0.0,
-        rz: float = 0.0,
+        x: float = -0.269,
+        y: float = 0.105,
+        z: float = 0.418,
+        rx: float = 2.141,
+        ry: float = -2.096,
+        rz: float = -0.160,
     ) -> int:
         """Instruct the robot to return to a home position given in Cartesian coordinates."""
         return await self.parent.run_action(

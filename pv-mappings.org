@@ -49,7 +49,13 @@
    - generate support file
    - version (unrecognized)
 * Status (25idAustin)
-  Joint and position PV may have a .VAL and .RBV field
+  Joint and position PV are set to mimic the EPICS motor records. Currently the following features are supported:
+
+  - Setting the position directly (.VAL)
+  - Readback value (.RBV)
+  - Jog forward and backward (.TWV, .TWF, .TWR)
+  - Jog velocity and acceleration (.JVEL, .JAR)
+  - Moving status, and done moving (.MOVN, .DMOV)
   
   | PV Suffix     | Has .RBV field? | Read-only | Putter | Dtype | Desc                                     |
   |---------------+-----------------+-----------+--------+-------+------------------------------------------|
@@ -111,3 +117,20 @@
    async def place(i: float, j:float, k: float, l: float, m: float, n: float) -> int
 ** Home (25idAustin:home)
    async def home(i: float, j:float, k: float, l: float, m: float, n: float) -> int
+* Samples
+  Each sample position has a PV group (record). This pv group executes
+  pick and place to and from the given sample position.
+
+  For example, for ~25idcAustin:sample0~
+
+  | PV Suffix | dtype | Read-only | Putter | Scan | Desc                                                 |
+  |-----------+-------+-----------+--------+------+------------------------------------------------------|
+  | :present  | bool  | Y         |        | Y    | Whether the sensor detects a sample stage is present |
+  | :load     | bool  |           | Y      |      | Direct the robot to load this sample to the stage    |
+  | :x        | float | Y         |        |      | Translation coordinate of the sample pick position   |
+  | :y        | float | Y         |        |      | Translation coordinate of the sample pick position   |
+  | :z        | float | Y         |        |      | Translation coordinate of the sample pick position   |
+  | :rx       | float | Y         |        |      | Rotation coordinate of the sample pick position      |
+  | :ry       | float | Y         |        |      | Rotation coordinate of the sample pick position      |
+  | :rz       | float | Y         |        |      | Rotation coordinate of the sample pick position      |
+

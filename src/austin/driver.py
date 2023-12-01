@@ -1,12 +1,12 @@
 import logging
 import time
-from copy import deepcopy
 
 import numpy as np
 
 import socket
 
 from urx import Robot, RobotException
+from urx.ursecmon import TimeoutException
 import austin.robotiq_gripper as robotiq_gripper
 
 
@@ -16,6 +16,10 @@ log = logging.getLogger(__name__)
 # Input for parameters
 
 # homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37] # unit: degree
+
+
+class RobotNotResponding(TimeoutException):
+    ...
 
 
 class RobotDisconnected(ConnectionError):
@@ -45,7 +49,19 @@ class RobotDriver:
         self.connect()
 
     def connect(self):
-        self.ur = Robot(self.robot_ip)
+        retries = 5
+        for i in range(retries):
+            try:
+                self.ur = Robot(self.robot_ip)
+            except TimeoutException as ex:
+                log.warning(f"{ex} (attempt {i+1}/{retries}")
+                continue
+            else:
+                break
+        else:
+            raise RobotNotResponding(
+                f"Could not connect to robot at {self.robot_ip} after {retries} attempts"
+            )
         # Create socket for dashboard commands
         self.sock.connect((self.robot_ip, self.robot_port))
         # Receive initial "Connected" Header
@@ -179,17 +195,76 @@ class RobotDriver:
         """
         return self.connect.getj()
 
-    def movej(self, joints, acc, vel, wait=True, **kwargs):
-        """
-        Description: Moves the robot to the home location.
-        """
-        return self.ur.movej(joints, acc, vel, wait=True)
+    def movej(self, joints, acc, vel, wait=True, relative=False, **kwargs):
+        """Moves the robot to the requested joint pose.
 
-    def movel(self, pos, acc, vel, wait=True, **kwargs):
+        *joints* controls the target position for the robot. Six values are expected,
+        they will be assumed to be (base, should, elbow, wrist1, wrist2, wrist3).
+
+        Parameters
+        ----------
+        joints
+          The target position in joint pose (radians).
+        acc
+          How fast the robot should accelerate.
+        vel
+          How fast the robot should move at full speed.
+        wait
+          Whether to block and wait for the robot to finish.
+        relative
+          If true, move by relative amounts for each axis.
+        **kwargs
+          Ignored.
+
         """
-        Description: Moves the robot to the home location.
+        # Move the robot
+        print(f"Moving to {joints=} ({relative=}, {acc=}, {vel=})")
+        return self.ur.movej(joints, acc, vel, wait=True, relative=relative)
+
+    def movel(
+        self,
+        pos: tuple,
+        acc: float,
+        vel: float,
+        wait: bool = True,
+        relative=False,
+        **kwargs,
+    ):
+        """Moves the robot to the requested location.
+
+        *pos* controls the target position for the robot. If six values are given,
+        they will be assumed to be (x, y, z, rx, ry, rz). If three values are given,
+        they will be assumed to be (x, y, z) and the current (rx, ry, rz)
+        values will be used.
+
+        Parameters
+        ----------
+        pos
+          The target position in cartesian coordinates.
+        acc
+          How fast the robot should accelerate.
+        vel
+          How fast the robot should move at full speed.
+        wait
+          Whether to block and wait for the robot to finish.
+        relative
+          If true, move by relative amounts for each axis.
+        **kwargs
+          Ignored.
+
         """
-        return self.ur.movel(pos, acc, vel, wait=True)
+        # Check if we need to grab the current orientation
+        if len(pos) == 3:
+            pos = (*pos, *self.get_position()[3:])
+        elif len(pos) not in [3, 6]:
+            raise ValueError(
+                "Position must be either (x, y, z) "
+                "or (x, y, z, rx, ry, rz). "
+                f"Received {pos}"
+            )
+        # Move the robot
+        log.info(f"Moving to {pos=} ({relative=})")
+        return self.ur.movel(pos, acc, vel, wait=True, relative=relative)
 
     def pickj(
         self,
@@ -203,11 +278,11 @@ class RobotDriver:
         wait=True,
     ):
         """Pick up from first goal position"""
-        above_goal = deepcopy(pick_goal)
+        above_goal = list(pick_goal)
         above_goal[1] += 0.218
         above_goal[2] -= 0.827
         above_goal[3] += 0.610
-        
+
         print("Moving to above goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
@@ -235,8 +310,20 @@ class RobotDriver:
         wait=True,
     ):
         """Pick up from first goal position"""
-        above_goal = deepcopy(pick_goal)
-        above_goal[2] += 0.1
+        pick_goal = list(pick_goal)
+        pick_goal[2] += 0.235
+        above_goal = list(pick_goal)
+        # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
+        is_board = pick_goal[1] > 0
+        outside_range = pick_goal[0] ** 2 + pick_goal[1] ** 2 > 0.15
+        if outside_range and is_board:
+            above_goal[1] -= 0.0762
+            above_goal[2] += 0.134
+            above_goal[3] += 0.103
+            above_goal[4] -= 0.104
+            above_goal[5] += 0.151
+        else:
+            above_goal[2] += 0.134
 
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
@@ -244,13 +331,16 @@ class RobotDriver:
         print("Opening gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving to goal position")
+        print("Moving to pick goal position")
         self.ur.movel(pick_goal, acc, vel, wait=True)
 
         print("Closing gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_cls, gripper_vel, gripper_frc)
 
-        print("Moving back to above goal position")
+        print("Rotating gripper by 5 deg")
+        self.ur.movej([0, 0, 0, 0, 0, 0.087], acc, vel, wait=True, relative=True)
+
+        print("Moving back to above pick goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
     def placej(
@@ -265,21 +355,21 @@ class RobotDriver:
         wait=True,
     ):
         """Place down at second goal position"""
-        above_goal = deepcopy(place_goal)
+        above_goal = list(place_goal)
         above_goal[1] += 0.070
         above_goal[2] -= 0.614
         above_goal[3] += 0.544
 
-        print("Moving to above goal position")
+        print("Moving to above place goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
-        print("Moving to goal position")
+        print("Moving to place goal position")
         self.ur.movej(place_goal, acc, vel, wait=True)
 
         print("Opennig gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving back to above goal position")
+        print("Moving back to above place goal position")
         self.ur.movej(above_goal, acc, vel, wait=True)
 
     def placel(
@@ -294,17 +384,29 @@ class RobotDriver:
         wait=True,
     ):
         """Place down at second goal position"""
-        above_goal = deepcopy(place_goal)
-        above_goal[2] += 0.1
+        place_goal = list(place_goal)
+        place_goal[2] += 0.237
+        above_goal = list(place_goal)
+        # For position 0 ~ 6, the above_goal should include 10° rotation of Wrist1
+        is_board = place_goal[1] > 0
+        outside_range = place_goal[0] ** 2 + place_goal[1] ** 2 > 0.15
+        if outside_range and is_board:
+            above_goal[1] -= 0.0762
+            above_goal[2] += 0.132
+            above_goal[3] += 0.103
+            above_goal[4] -= 0.104
+            above_goal[5] += 0.151
+        else:
+            above_goal[2] += 0.132
 
-        print("Moving to above goal position")
+        print("Moving to above place goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
-        print("Moving to goal position")
+        print("Moving to place goal position")
         self.ur.movel(place_goal, acc, vel, wait=True)
 
         print("Opennig gripper")
         self.gripper.move_and_wait_for_pos(gripper_pos_opn, gripper_vel, gripper_frc)
 
-        print("Moving back to above goal position")
+        print("Moving back to above place goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
