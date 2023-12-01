@@ -6,6 +6,7 @@ import numpy as np
 import socket
 
 from urx import Robot, RobotException
+from urx.ursecmon import TimeoutException
 import austin.robotiq_gripper as robotiq_gripper
 
 
@@ -15,6 +16,10 @@ log = logging.getLogger(__name__)
 # Input for parameters
 
 # homej0 = [-23.18, -78.18, 137.67, -153.64, -88.58, 284.37] # unit: degree
+
+
+class RobotNotResponding(TimeoutException):
+    ...
 
 
 class RobotDisconnected(ConnectionError):
@@ -44,7 +49,17 @@ class RobotDriver:
         self.connect()
 
     def connect(self):
-        self.ur = Robot(self.robot_ip)
+        retries = 5
+        for i in range(retries):
+            try:
+                self.ur = Robot(self.robot_ip)
+            except TimeoutException as ex:
+                log.warning(f"{ex} (attempt {i+1}/{retries}")
+                continue
+            else:
+                break
+        else:
+            raise RobotNotResponding(f"Could not connect to robot at {self.robot_ip} after {retries} attempts")
         # Create socket for dashboard commands
         self.sock.connect((self.robot_ip, self.robot_port))
         # Receive initial "Connected" Header
@@ -179,10 +194,30 @@ class RobotDriver:
         return self.connect.getj()
 
     def movej(self, joints, acc, vel, wait=True, relative=False, **kwargs):
+        """Moves the robot to the requested joint pose.
+
+        *joints* controls the target position for the robot. Six values are expected,
+        they will be assumed to be (base, should, elbow, wrist1, wrist2, wrist3).
+
+        Parameters
+        ----------
+        joints
+          The target position in joint pose (radians).
+        acc
+          How fast the robot should accelerate.
+        vel
+          How fast the robot should move at full speed.
+        wait
+          Whether to block and wait for the robot to finish.
+        relative
+          If true, move by relative amounts for each axis.
+        **kwargs
+          Ignored.
+
         """
-        Description: Moves the robot to the requested joint pose.
-        """
-        return self.ur.movej(joints, acc, vel, wait=True)
+        # Move the robot
+        print(f"Moving to {joints=} ({relative=}, {acc=}, {vel=})")
+        return self.ur.movej(joints, acc, vel, wait=True, relative=relative)
 
     def movel(self, pos: tuple, acc: float, vel: float, wait: bool = True, relative=False, **kwargs):
         """Moves the robot to the requested location.
@@ -218,7 +253,7 @@ class RobotDriver:
                 f"Received {pos}"
             )
         # Move the robot
-        print(f"Moving to {pos=} ({relative=})")
+        log.info(f"Moving to {pos=} ({relative=})")
         return self.ur.movel(pos, acc, vel, wait=True, relative=relative)
 
     def pickj(

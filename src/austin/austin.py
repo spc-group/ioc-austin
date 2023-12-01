@@ -20,7 +20,7 @@ from caproto.server import (
     pvfunction,
     autosave,
 )
-from caprotoapps import AliveGroup
+from caprotoapps import AliveGroup, LabJackT4
 
 from .driver import RobotDriver
 from .dashboard import DashboardGroup
@@ -64,6 +64,10 @@ class AustinIOC(PVGroup):
     # Support PVs
     autosave = SubGroup(autosave.AutosaveHelper)
     alive = SubGroup(AliveGroup, prefix="alive", remote_host="xapps2.xray.aps.anl.gov")
+
+    # Labjacks for responding to changes in the sample presence switches
+    labjack0 = SubGroup(LabJackT4, prefix="LJT4_0:", identifier="labjackAustin00")
+    labjack1 = SubGroup(LabJackT4, prefix="LJT4_1:", identifier="labjackAustin01")
 
     def __init__(
         self, robot_ip, robot_port=29999, gripper_port=63352, timeout=5, *args, **kwargs
