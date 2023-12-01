@@ -37,7 +37,6 @@ POLL_TIME = 0.5
 
 
 class RobotAxisFields(MotorFields):
-    
     def __init__(self, *args, axis_num: int = 99, **kwargs):
         self.axis_num = axis_num
         super().__init__(*args, **kwargs)
@@ -100,14 +99,17 @@ class RobotAxisFields(MotorFields):
         axis_num = self.parent.axis_num
         # Decide how fast to move
         from pprint import pprint
+
         pprint(dir(instance.group))
         acceleration = instance.group.jog_accel.value
         velocity = instance.group.jog_velocity.value
         # Do the actual moving
         log.info(f"Tweaking axis {axis_num} value by {step}.")
         new_pos = tuple((step if n == axis_num else 0) for n in range(6))
-        await self.move_axis(instance, new_pos, vel=velocity, acc=acceleration, relative=True)
-        
+        await self.move_axis(
+            instance, new_pos, vel=velocity, acc=acceleration, relative=True
+        )
+
     @MotorFields.tweak_motor_forward.putter
     async def tweak_motor_forward(self, instance, value):
         await self.tweak_value(instance, value, direction=1)
@@ -129,7 +131,7 @@ class RobotAxisFields(MotorFields):
 class RobotJointFields(RobotAxisFields):
     def do_move(self, new_pos, vel, acc, relative):
         self.driver.movej(new_pos, vel=vel, acc=acc, relative=relative)
-    
+
 
 class RobotAxisPosition(PvpropertyDouble):
     def __init__(self, *args, axis_num: int = 99, **kwargs):
@@ -202,17 +204,19 @@ class StatusGroup(PVGroup):
         return value
 
     # Joint positions
-    i = autosaved(pvproperty(
-        name="i",
-        value=0.0,
-        doc="Base",
-        put=move_joint,
-        record=RobotJointFields,
-        dtype=RobotAxisPosition,
-        axis_num=0,
-        units="rad",
-        precision=3,
-    ))
+    i = autosaved(
+        pvproperty(
+            name="i",
+            value=0.0,
+            doc="Base",
+            put=move_joint,
+            record=RobotJointFields,
+            dtype=RobotAxisPosition,
+            axis_num=0,
+            units="rad",
+            precision=3,
+        )
+    )
     j = pvproperty(
         name="j",
         value=0.0,
@@ -276,9 +280,15 @@ class StatusGroup(PVGroup):
         # Get current join positions
         new_joints = await loop.run_in_executor(None, self.parent.driver.get_joints)
         # Update PVs with new joint positions
-        pvs = [self.i.fields["RBV"], self.j.fields["RBV"], self.k.fields["RBV"],
-               self.l.fields["RBV"], self.m.fields["RBV"], self.n.fields["RBV"]]
-               # pvs = [self.i_rbv, self.j_rbv, self.k_rbv, self.l_rbv, self.m_rbv, self.n_rbv]
+        pvs = [
+            self.i.fields["RBV"],
+            self.j.fields["RBV"],
+            self.k.fields["RBV"],
+            self.l.fields["RBV"],
+            self.m.fields["RBV"],
+            self.n.fields["RBV"],
+        ]
+        # pvs = [self.i_rbv, self.j_rbv, self.k_rbv, self.l_rbv, self.m_rbv, self.n_rbv]
         for pv, val in zip(pvs, new_joints):
             await pv.write(val)
 

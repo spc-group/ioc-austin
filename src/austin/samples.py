@@ -62,7 +62,7 @@ for n in range(24):
 # A trajectory that the robot can follow to safely navigate from the shelf to the stage
 shelf_to_stage_path = [
     [-0.26948, 0.10508, 0.41812],
-    [-0.04074, -0.40701, 0.31061],   
+    [-0.04074, -0.40701, 0.31061],
 ]
 
 
@@ -114,8 +114,8 @@ class SampleGroup(PVGroup):
         name=":empty",
         value=True,
         doc="Whether a sample base is not present in this platform position",
-    )    
-    
+    )
+
     @present.scan(0.1)
     async def present(self, instance, async_lib):
         """Ask the attached labjacks whether a sample is present."""
@@ -138,7 +138,7 @@ class SampleGroup(PVGroup):
         if present_val != instance.value:
             await instance.write(present_val)
             await self.empty.write(empty_val)
-        
+
         # print(f"Sample {self.sample_num} is on LJ {lj_num} position {lj_pos}: {new_val}")
 
     load = pvproperty(
@@ -285,8 +285,12 @@ class SampleGroup(PVGroup):
 class SamplesGroup(PVGroup):
     """Covers all the sample positions, and keeps track of which sample is loaded."""
 
-    current_sample = autosaved(pvproperty(name="current_sample", value="None", dtype=str, record="stringin"))
-    unload_current_sample = pvproperty(name="unload_current_sample", value=False, dtype=bool)
+    current_sample = autosaved(
+        pvproperty(name="current_sample", value="None", dtype=str, record="stringin")
+    )
+    unload_current_sample = pvproperty(
+        name="unload_current_sample", value=False, dtype=bool
+    )
 
     @unload_current_sample.putter
     async def unload_current_sample(self, instance, value):
@@ -303,60 +307,60 @@ class SamplesGroup(PVGroup):
         return "Off"
 
     # sample0 = SubGroup(
-        # SampleGroup,
-        # prefix="sample0",
-        # sample_position=sample_positions[0],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample0",
+    # sample_position=sample_positions[0],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample1 = SubGroup(
-        # SampleGroup,
-        # prefix="sample1",
-        # sample_position=sample_positions[1],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample1",
+    # sample_position=sample_positions[1],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample2 = SubGroup(
-        # SampleGroup,
-        # prefix="sample2",
-        # sample_position=sample_positions[2],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample2",
+    # sample_position=sample_positions[2],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample3 = SubGroup(
-        # SampleGroup,
-        # prefix="sample3",
-        # sample_position=sample_positions[3],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample3",
+    # sample_position=sample_positions[3],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample4 = SubGroup(
-        # SampleGroup,
-        # prefix="sample4",
-        # sample_position=sample_positions[4],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample4",
+    # sample_position=sample_positions[4],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample5 = SubGroup(
-        # SampleGroup,
-        # prefix="sample5",
-        # sample_position=sample_positions[5],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample5",
+    # sample_position=sample_positions[5],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample6 = SubGroup(
-        # SampleGroup,
-        # prefix="sample6",
-        # sample_position=sample_positions[6],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample6",
+    # sample_position=sample_positions[6],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample7 = SubGroup(
-        # SampleGroup,
-        # prefix="sample7",
-        # sample_position=sample_positions[7],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample7",
+    # sample_position=sample_positions[7],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     sample8 = SubGroup(
         SampleGroup,
@@ -380,25 +384,25 @@ class SamplesGroup(PVGroup):
         waypoints=shelf_to_stage_path,
     )
     # sample11 = SubGroup(
-        # SampleGroup,
-        # prefix="sample11",
-        # sample_position=sample_positions[11],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample11",
+    # sample_position=sample_positions[11],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample12 = SubGroup(
-        # SampleGroup,
-        # prefix="sample12",
-        # sample_position=sample_positions[12],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample12",
+    # sample_position=sample_positions[12],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample13 = SubGroup(
-        # SampleGroup,
-        # prefix="sample13",
-        # sample_position=sample_positions[13],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample13",
+    # sample_position=sample_positions[13],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     sample14 = SubGroup(
         SampleGroup,
@@ -422,25 +426,25 @@ class SamplesGroup(PVGroup):
         waypoints=shelf_to_stage_path,
     )
     # sample17 = SubGroup(
-        # SampleGroup,
-        # prefix="sample17",
-        # sample_position=sample_positions[17],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample17",
+    # sample_position=sample_positions[17],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample18 = SubGroup(
-        # SampleGroup,
-        # prefix="sample18",
-        # sample_position=sample_positions[18],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample18",
+    # sample_position=sample_positions[18],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     # sample19 = SubGroup(
-        # SampleGroup,
-        # prefix="sample19",
-        # sample_position=sample_positions[19],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample19",
+    # sample_position=sample_positions[19],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
     sample20 = SubGroup(
         SampleGroup,
@@ -464,10 +468,9 @@ class SamplesGroup(PVGroup):
         waypoints=shelf_to_stage_path,
     )
     # sample23 = SubGroup(
-        # SampleGroup,
-        # prefix="sample23",
-        # sample_position=sample_positions[23],
-        # stage_position=stage_position,
-        # waypoints=shelf_to_stage_path,
+    # SampleGroup,
+    # prefix="sample23",
+    # sample_position=sample_positions[23],
+    # stage_position=stage_position,
+    # waypoints=shelf_to_stage_path,
     # )
-    

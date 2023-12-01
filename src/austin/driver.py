@@ -59,7 +59,9 @@ class RobotDriver:
             else:
                 break
         else:
-            raise RobotNotResponding(f"Could not connect to robot at {self.robot_ip} after {retries} attempts")
+            raise RobotNotResponding(
+                f"Could not connect to robot at {self.robot_ip} after {retries} attempts"
+            )
         # Create socket for dashboard commands
         self.sock.connect((self.robot_ip, self.robot_port))
         # Receive initial "Connected" Header
@@ -219,7 +221,15 @@ class RobotDriver:
         print(f"Moving to {joints=} ({relative=}, {acc=}, {vel=})")
         return self.ur.movej(joints, acc, vel, wait=True, relative=relative)
 
-    def movel(self, pos: tuple, acc: float, vel: float, wait: bool = True, relative=False, **kwargs):
+    def movel(
+        self,
+        pos: tuple,
+        acc: float,
+        vel: float,
+        wait: bool = True,
+        relative=False,
+        **kwargs,
+    ):
         """Moves the robot to the requested location.
 
         *pos* controls the target position for the robot. If six values are given,
@@ -305,7 +315,7 @@ class RobotDriver:
         above_goal = list(pick_goal)
         # for position 0 ~ 6, the above_goal should include 10 deg rotation of Wrist1
         is_board = pick_goal[1] > 0
-        outside_range = pick_goal[0]**2 + pick_goal[1]**2>0.15
+        outside_range = pick_goal[0] ** 2 + pick_goal[1] ** 2 > 0.15
         if outside_range and is_board:
             above_goal[1] -= 0.0762
             above_goal[2] += 0.134
@@ -313,8 +323,8 @@ class RobotDriver:
             above_goal[4] -= 0.104
             above_goal[5] += 0.151
         else:
-            above_goal[2] += 0.134        
-        
+            above_goal[2] += 0.134
+
         print("Moving to above goal position")
         self.ur.movel(above_goal, acc, vel, wait=True)
 
@@ -379,7 +389,7 @@ class RobotDriver:
         above_goal = list(place_goal)
         # For position 0 ~ 6, the above_goal should include 10° rotation of Wrist1
         is_board = place_goal[1] > 0
-        outside_range = place_goal[0]**2 + place_goal[1]**2>0.15
+        outside_range = place_goal[0] ** 2 + place_goal[1] ** 2 > 0.15
         if outside_range and is_board:
             above_goal[1] -= 0.0762
             above_goal[2] += 0.132
