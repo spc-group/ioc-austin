@@ -98,9 +98,6 @@ class RobotAxisFields(MotorFields):
         step = direction * instance.group.tweak_step_size.value
         axis_num = self.parent.axis_num
         # Decide how fast to move
-        from pprint import pprint
-
-        pprint(dir(instance.group))
         acceleration = instance.group.jog_accel.value
         velocity = instance.group.jog_velocity.value
         # Do the actual moving
@@ -126,6 +123,14 @@ class RobotAxisFields(MotorFields):
         self.async_lib = async_lib
         # Set the fields to the PV spec properties
         await instance.write(self.parent.__doc__)
+
+    @MotorFields.jog_accel.startup
+    async def jog_accel(self, instance, async_lib):
+        """Set the jog accel and velocity to sensible values
+        
+        This is a hack, these should really be autosaved."""
+        await self.jog_accel.write(0.2)
+        await self.jog_velocity.write(0.5)
 
 
 class RobotJointFields(RobotAxisFields):
@@ -159,7 +164,7 @@ class StatusGroup(PVGroup):
             if instance is getattr(self, axis):
                 new_joints.append(value)
             else:
-                new_joints.append(getattr(self, f"{axis}_rbv").value)
+                new_joints.append(getattr(self, f"{axis}").fields["RBV"].value)
         acceleration = self.acceleration.value
         velocity = self.velocity.value
         # Move to the new joint position
@@ -192,7 +197,7 @@ class StatusGroup(PVGroup):
             if instance is getattr(self, axis):
                 new_pos.append(value)
             else:
-                new_pos.append(getattr(self, f"{axis}_rbv").value)
+                new_pos.append(getattr(self, f"{axis}").fields["RBV"].value)
         acceleration = self.acceleration.value
         velocity = self.velocity.value
         # Move to the new joint position
@@ -204,8 +209,7 @@ class StatusGroup(PVGroup):
         return value
 
     # Joint positions
-    i = autosaved(
-        pvproperty(
+    i = pvproperty(
             name="i",
             value=0.0,
             doc="Base",
@@ -216,7 +220,6 @@ class StatusGroup(PVGroup):
             units="rad",
             precision=3,
         )
-    )
     j = pvproperty(
         name="j",
         value=0.0,
