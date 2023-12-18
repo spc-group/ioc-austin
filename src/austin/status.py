@@ -127,7 +127,7 @@ class RobotAxisFields(MotorFields):
     @MotorFields.jog_accel.startup
     async def jog_accel(self, instance, async_lib):
         """Set the jog accel and velocity to sensible values
-        
+
         This is a hack, these should really be autosaved."""
         await self.jog_accel.write(0.2)
         await self.jog_velocity.write(0.5)
@@ -210,16 +210,16 @@ class StatusGroup(PVGroup):
 
     # Joint positions
     i = pvproperty(
-            name="i",
-            value=0.0,
-            doc="Base",
-            put=move_joint,
-            record=RobotJointFields,
-            dtype=RobotAxisPosition,
-            axis_num=0,
-            units="rad",
-            precision=3,
-        )
+        name="i",
+        value=0.0,
+        doc="Base",
+        put=move_joint,
+        record=RobotJointFields,
+        dtype=RobotAxisPosition,
+        axis_num=0,
+        units="rad",
+        precision=3,
+    )
     j = pvproperty(
         name="j",
         value=0.0,
