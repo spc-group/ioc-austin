@@ -134,3 +134,13 @@
   | :ry       | float | Y         |        |      | Rotation coordinate of the sample pick position      |
   | :rz       | float | Y         |        |      | Rotation coordinate of the sample pick position      |
 
+
+  There are also several overall sample PVs. For example, relative to for ~25idcAustin~
+
+  | PV Suffix              | dtype | Read-only | Putter | Scan | Desc                                                         |
+  |------------------------+-------+-----------+--------+------+--------------------------------------------------------------|
+  | :current_sample        | str   |           |        |      | Sample number for the currently loaded sample, or "None"     |
+  | :unload_current_sample | bool  |           | Y      |      | Return the current sample to its board position              |
+  | :current_sample_reset  | bool  |           | Y      |      | Reset the *current_sample* PV to it's default value ("None") |
+  | :home                  | bool  |           | Y      |      | Instruct the robot to return to the first waypoint position  |
+  | :cal_stage             | bool  |           | Y      |      | Instruct the robot to calibrate the stage position           |

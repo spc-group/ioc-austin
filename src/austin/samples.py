@@ -5,7 +5,7 @@ import time
 import asyncio
 from functools import partial
 from threading import Lock
-from typing import Literal, Sequence, Tuple
+from typing import Literal, Sequence, Tuple, Optional
 import enum
 
 import numpy as np
@@ -33,10 +33,13 @@ log = logging.getLogger(__name__)
 xyzStage = [0.20354, -0.41995, -0.06055]
 # xyzStage = [0.23074, -0.43944, -0.06051]
 # RxyzStage = [2.893, 1.226, 0.003]
-RxyzStage = [-2.893, -1.226, -0.003]
-posStage_del = [0.00499, 0.00105, 0, 0, 0, 0]
+RXYZ_STAGE = [-2.893, -1.226, -0.003]
 
-stage_position = np.array(xyzStage + RxyzStage) + np.array(posStage_del)
+# This offset accounts for the camera not being centered on the robot
+STAGE_DELTA = [0.00499, 0.00105, 0, 0, 0, 0]
+
+# stage_position = np.array(xyzStage + RxyzStage) + np.array(posStage_del)
+stage_position = [0, 0, 0, 0, 0, 0]  # For testing
 
 # 24 Holders
 xyz8 = [-0.07709, 0.35717, 0.06101]
@@ -59,49 +62,49 @@ for n in range(24):
     pos = [x, y, z] + Rxyz0
     sample_positions.append(pos)
 
-# A trajectory that the robot can follow to safely navigate from the shelf to the stage
-shelf_to_stage_path = [
-    [-0.26948, 0.10508, 0.41812],
+# A trajectory that the robot can follow to safely navigate from the board to the stage
+board_to_stage_path = [
+    [-0.26949, 0.10510, 0.41805],
     [-0.04074, -0.40701, 0.31061],
 ]
 
+# Gipper is lifted up 0.2 m relative to the stage position
+z_gripper_stage = 0.2
 
 class SampleGroup(PVGroup):
-    """Describes a sample holder sitting on the shelf.
+    """Describes a sample holder sitting on the board.
 
     The robot will be able to retrieve the sample holder from its position,
     and place it on the stage (and also vice-versa).
 
-    When going from shelf to the stage, it will go through the points
-    specified in *waypoints* in order. When going from the stage back to the shelf,
+    When going from board to the stage, it will go through the points
+    specified in *waypoints* in order. When going from the stage back to the board,
     it will go through *waypoints* in reverse order.
 
     Parameters
     ----------
     sample_position
-      Cartesian coordinates (x, y, z, rx, ry, rz) of the sample holder on the shelf.
+      Cartesian coordinates (x, y, z, rx, ry, rz) of the sample holder on the board.
     stage_position
       Cartesian coordinates (x, y, z, rx, ry, rz) of the sample holder on the translation stage.
     waypoints
-      Cartesian coordinates (x, y, z, rx, ry, rz) sets to follow on the way from the shelf to the stage.
+      Cartesian coordinates (x, y, z, rx, ry, rz) sets to follow on the way from the board to the stage.
 
     """
 
     sample_position: tuple[float] = (0, 0, 0, 0, 0, 0)
-    stage_position: tuple[float] = (0, 0, 0, 0, 0, 0)
+    stage_position: Optional[tuple[float]] = None
     waypoints: Sequence[Tuple[float]] = []
 
     def __init__(
         self,
         sample_position: tuple[float],
-        stage_position: tuple[float],
         waypoints: tuple[float],
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.sample_position = sample_position
-        self.stage_position = stage_position
         self.waypoints = waypoints
 
     present = pvproperty(
@@ -164,6 +167,17 @@ class SampleGroup(PVGroup):
     @property
     def sample_num(self):
         return int(self.prefix.split(":")[-1][6:])
+    
+    def check_calibration(self):
+        """Make sure that this sample group knows where the stage and sample positions are."""
+        if self.stage_position is None:
+            raise RuntimeError(f"Cannot load sample {self.sample_num}."
+                               "Stage calibration not performed.")
+        if self.sample_position is None:
+            raise RuntimeError(f"Cannot load sample {self.sample_num}."
+                               "Sample calibration not performed.")
+        # Checks passed, we're good folks.
+        return True
 
     @load.putter
     async def load(self, instance, value):
@@ -174,6 +188,8 @@ class SampleGroup(PVGroup):
         """
         if value != "On":
             return "Off"
+        # Check that we have calibrated stage and sample positions
+        self.check_calibration()
         # Check that there is a sample on the platform
         if self.is_empty:
             raise RuntimeError("Sample platform is empty.")
@@ -243,7 +259,7 @@ class SampleGroup(PVGroup):
         # Update the presence PV
         await self.present.write(1)
         return "Off"
-
+  
     x = pvproperty(
         name=":x",
         value=0.0,
@@ -292,6 +308,25 @@ class SamplesGroup(PVGroup):
         name="unload_current_sample", value=False, dtype=bool
     )
 
+    current_sample_reset = pvproperty(name="current_sample_reset", value=False, dtype=bool, doc="Reset *current_sample* to its default empty value")
+
+    @current_sample_reset.putter
+    async def current_sample_reset(self, instance, value):
+        if value != "On":
+            return "Off"
+        # Reset the current sample to its defualt value
+        await self.current_sample.write("None")
+        return "Off"
+
+    def sample_pvproperties(self):
+        """Iterator over the groups for all the sample positions."""
+        num_samples = 24
+        for sample_num in range(num_samples):
+            try:
+                yield getattr(self, f"sample{sample_num}")
+            except AttributeError:
+                continue
+
     @unload_current_sample.putter
     async def unload_current_sample(self, instance, value):
         """Remove the current sample from the stage, if one is present."""
@@ -306,171 +341,233 @@ class SamplesGroup(PVGroup):
             await getattr(self, f"sample{current_sample}").unload.write("On")
         return "Off"
 
+    home = pvproperty(
+        name="home", 
+        value=False,
+        dtype=bool,
+        doc="Direct the robot to go home near the board",
+    )
+    
+    @home.putter
+    async def home(self, instance, value):
+        """
+        Robot goes home near the board through nearest waypoints.
+        """
+        waypoints=[xyz+[2.242, -2.199, -0.008] for xyz in board_to_stage_path]
+        if self.parent.status.y.fields["RBV"].value < waypoints[-1][1]:
+        # go to the waypoint near stage first and then home near the board 
+            for waypoint in waypoints[::-1]:
+                await self.parent.actions.run_action(self.parent.driver.movel, waypoint)
+        else:
+        # go to the waypoint near the board directly
+            await self.parent.actions.run_action(self.parent.driver.movel, waypoints[0])
+        await self.parent.status.n.write(2.276)
+
+    cal_stage = pvproperty(
+        name="cal_stage", 
+        value=False,
+        dtype=bool,
+        doc="Calibrate stage position using robot camera",
+    )
+    
+    @cal_stage.putter
+    async def cal_stage(self, instance, value):
+        """
+        Calibrate Aerotech stage position using camera. Before this action, please move Aerotech stage to (0,0).
+        """
+        
+        found_stage = False
+        while not found_stage:
+            await self.home.write("On")
+            await self.parent.dashboard.program.write("cal_stage.urp")
+            await self.parent.dashboard.play.write("On")
+            # Wait for the robot to be done
+            while self.parent.dashboard.program_running.value == "Off":
+                await asyncio.sleep(0.1)
+            while self.parent.dashboard.program_running.value == "On":
+                await asyncio.sleep(0.1)
+            # Read the stage position based on where the robot is now
+            stage_x=self.parent.status.x.fields["RBV"].value
+            stage_y=self.parent.status.y.fields["RBV"].value
+            stage_z=self.parent.status.z.fields["RBV"].value - z_gripper_stage
+            stage = [stage_x, stage_y, stage_z] + RXYZ_STAGE
+            # Add an offset to account for the camera not being centered on the robot
+            stage = [a+b for a, b in zip(stage, STAGE_DELTA)]
+            # Figure out if the calibration was successful (Aerotech stage z ~-0.6, Aerotech errobar +-0.03)
+            if stage_z > -0.09 and stage_z < -0.03:
+                found_stage = stage
+                print("Found position is:" +str(found_stage))
+        # Set the calibrated stage position for all the sample groups
+        for sample_grp in self.sample_pvproperties():
+            sample_grp.stage_position = found_stage
+        # Send the robot back to its home position
+        await self.home.write("On")
+
     # sample0 = SubGroup(
     # SampleGroup,
     # prefix="sample0",
     # sample_position=sample_positions[0],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample1 = SubGroup(
     # SampleGroup,
     # prefix="sample1",
     # sample_position=sample_positions[1],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample2 = SubGroup(
     # SampleGroup,
     # prefix="sample2",
     # sample_position=sample_positions[2],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample3 = SubGroup(
     # SampleGroup,
     # prefix="sample3",
     # sample_position=sample_positions[3],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample4 = SubGroup(
     # SampleGroup,
     # prefix="sample4",
     # sample_position=sample_positions[4],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample5 = SubGroup(
     # SampleGroup,
     # prefix="sample5",
     # sample_position=sample_positions[5],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample6 = SubGroup(
     # SampleGroup,
     # prefix="sample6",
     # sample_position=sample_positions[6],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample7 = SubGroup(
     # SampleGroup,
     # prefix="sample7",
     # sample_position=sample_positions[7],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     sample8 = SubGroup(
         SampleGroup,
         prefix="sample8",
         sample_position=sample_positions[8],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample9 = SubGroup(
         SampleGroup,
         prefix="sample9",
         sample_position=sample_positions[9],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample10 = SubGroup(
         SampleGroup,
         prefix="sample10",
         sample_position=sample_positions[10],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     # sample11 = SubGroup(
     # SampleGroup,
     # prefix="sample11",
     # sample_position=sample_positions[11],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample12 = SubGroup(
     # SampleGroup,
     # prefix="sample12",
     # sample_position=sample_positions[12],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample13 = SubGroup(
     # SampleGroup,
     # prefix="sample13",
     # sample_position=sample_positions[13],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     sample14 = SubGroup(
         SampleGroup,
         prefix="sample14",
         sample_position=sample_positions[14],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample15 = SubGroup(
         SampleGroup,
         prefix="sample15",
         sample_position=sample_positions[15],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample16 = SubGroup(
         SampleGroup,
         prefix="sample16",
         sample_position=sample_positions[16],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     # sample17 = SubGroup(
     # SampleGroup,
     # prefix="sample17",
     # sample_position=sample_positions[17],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample18 = SubGroup(
     # SampleGroup,
     # prefix="sample18",
     # sample_position=sample_positions[18],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     # sample19 = SubGroup(
     # SampleGroup,
     # prefix="sample19",
     # sample_position=sample_positions[19],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
     sample20 = SubGroup(
         SampleGroup,
         prefix="sample20",
         sample_position=sample_positions[20],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample21 = SubGroup(
         SampleGroup,
         prefix="sample21",
         sample_position=sample_positions[21],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     sample22 = SubGroup(
         SampleGroup,
         prefix="sample22",
         sample_position=sample_positions[22],
-        stage_position=stage_position,
-        waypoints=shelf_to_stage_path,
+        
+        waypoints=board_to_stage_path,
     )
     # sample23 = SubGroup(
     # SampleGroup,
     # prefix="sample23",
     # sample_position=sample_positions[23],
-    # stage_position=stage_position,
-    # waypoints=shelf_to_stage_path,
+    # 
+    # waypoints=board_to_stage_path,
     # )
