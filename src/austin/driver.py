@@ -55,6 +55,7 @@ class RobotDriver:
                 self.ur = Robot(self.robot_ip)
             except TimeoutException as ex:
                 log.warning(f"{ex} (attempt {i+1}/{retries}")
+                time.sleep(1)
                 continue
             else:
                 break
